@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="linechart_LineChartView">
+        <item name="linechart_lineColor">@color/linechart_line_color</item>
+        <item name="linechart_lineWidth">@dimen/linechart_line_width</item>
+        <item name="linechart_cornerRadius">@dimen/linechart_corner_radius</item>
+
+        <item name="linechart_fillType">none</item>
+        <item name="linechart_fillColor">@color/linechart_fill_color</item>
+
+        <item name="linechart_baseLineColor">@color/linechart_base_line_color</item>
+        <item name="linechart_baseLineWidth">@dimen/linechart_base_line_width</item>
+
+        <item name="linechart_scrubEnabled">false</item>
+        <item name="linechart_scrubLineColor">@color/linechart_scrub_line_color</item>
+        <item name="linechart_scrubLineWidth">@dimen/linechart_scrub_line_width</item>
+    </style>
+</resources>

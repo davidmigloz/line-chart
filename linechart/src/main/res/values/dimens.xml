@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="linechart_line_width">2dp</dimen>
+    <dimen name="linechart_corner_radius">3dp</dimen>
+    <dimen name="linechart_base_line_width">1dp</dimen>
+    <dimen name="linechart_scrub_line_width">2dp</dimen>
+</resources>
