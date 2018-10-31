@@ -2,6 +2,7 @@
 <resources>
     <color name="linechart_line_color">#000000</color>
     <color name="linechart_fill_color">#a0000000</color>
+    <color name="linechart_grid_line_color">#4DFFFFFF</color>
     <color name="linechart_base_line_color">#757577</color>
     <color name="linechart_scrub_line_color">#757577</color>
 </resources>

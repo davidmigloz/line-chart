@@ -32,7 +32,7 @@ import java.util.Locale;
 
 @SuppressWarnings("unused")
 public class LineChartView extends View implements LineChart, ScrubGestureDetector.ScrubListener {
-
+    
     // Styleable properties
     @ColorInt
     private int lineColor;
@@ -43,6 +43,12 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
     private int fillType = LineChartFillType.NONE;
     @ColorInt
     private int fillColor;
+
+    @ColorInt
+    private int gridLineColor;
+    private float gridLineWidth;
+    private int gridXDivisions;
+    private int gridYDivisions;
 
     @ColorInt
     private int baseLineColor;
@@ -56,10 +62,12 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
     // Canvas
     private Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint gridLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint baseLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint scrubLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path renderPath = new Path();
     private final Path linePath = new Path();
+    private final Path gridLinePath = new Path();
     private final Path baseLinePath = new Path();
     private final Path scrubLinePath = new Path();
     private ScaleHelper scaleHelper;
@@ -123,6 +131,11 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
         setFillType(a.getInt(R.styleable.LineChartView_linechart_fillType, LineChartFillType.NONE));
         fillColor = a.getColor(R.styleable.LineChartView_linechart_fillColor, 0);
 
+        gridLineColor = a.getColor(R.styleable.LineChartView_linechart_gridLineColor, 0);
+        gridLineWidth = a.getDimension(R.styleable.LineChartView_linechart_gridLineWidth, 0);
+        gridXDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridXDivisions, 0);
+        gridYDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridYDivisions, 0);
+
         baseLineColor = a.getColor(R.styleable.LineChartView_linechart_baseLineColor, 0);
         baseLineWidth = a.getDimension(R.styleable.LineChartView_linechart_baseLineWidth, 0);
 
@@ -149,6 +162,10 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
         fillPaint.setColor(fillColor);
         fillPaint.setStyle(Paint.Style.FILL);
         fillPaint.setStrokeWidth(0);
+        // Grid
+        gridLinePaint.setStyle(Paint.Style.STROKE);
+        gridLinePaint.setColor(gridLineColor);
+        gridLinePaint.setStrokeWidth(gridLineWidth);
         // Base line
         baseLinePaint.setStyle(Paint.Style.STROKE);
         baseLinePaint.setColor(baseLineColor);
@@ -249,10 +266,30 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
 
         scaleHelper = new ScaleHelper(adapter, contentRect, lineWidth, isFill());
 
-        xPoints.clear();
-        yPoints.clear();
+        // Draw grid
+        final float gridLeft = contentRect.left;
+        final float gridBottom = contentRect.bottom;
+        final float gridTop = contentRect.top;
+        final float gridRight = contentRect.right;
+
+        gridLinePath.reset();
+        float grid;
+        float guideLineSpacing = (gridBottom - gridTop) / gridYDivisions;
+        for (int i = 0; i < 10; i++) {
+            grid = gridTop + i * guideLineSpacing;
+            gridLinePath.moveTo(gridLeft, grid);
+            gridLinePath.lineTo(gridRight, grid);
+        }
+        guideLineSpacing = (gridRight - gridLeft) / gridXDivisions;
+        for (int i = 0; i < 10; i++) {
+            grid = gridLeft + i * guideLineSpacing;
+            gridLinePath.moveTo(grid, gridTop);
+            gridLinePath.lineTo(grid, gridBottom);
+        }
 
         // Make our main graph path
+        xPoints.clear();
+        yPoints.clear();
         linePath.reset();
         for (int i = 0; i < adapterCount; i++) {
             final float x = scaleHelper.getX(adapter.getX(i));
@@ -273,7 +310,7 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
         // if we're filling the graph in, close the path's circuit
         final Float fillEdge = getFillEdge();
         if (fillEdge != null) {
-            final float lastX = scaleHelper.getX(adapter.getCount() - 1);
+            final float lastX = scaleHelper.getX(adapter.getCount() - 1F);
             // line up or down to the fill edge
             linePath.lineTo(lastX, fillEdge);
             // line straight left to far edge of the view
@@ -310,6 +347,7 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        canvas.drawPath(gridLinePath, gridLinePaint);
         canvas.drawPath(baseLinePath, baseLinePaint);
         if (fillType != LineChartFillType.NONE) {
             canvas.drawPath(renderPath, fillPaint);
@@ -444,6 +482,52 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
     public void setFillColor(@ColorInt int fillColor) {
         this.fillColor = fillColor;
         fillPaint.setColor(fillColor);
+        invalidate();
+    }
+
+    @Override
+    public int getGridLineColor() {
+        return gridLineColor;
+    }
+
+    @Override
+    public void setGridLineColor(int gridLineColor) {
+        this.gridLineColor = gridLineColor;
+        gridLinePaint.setColor(gridLineColor);
+        invalidate();
+    }
+
+    @Override
+    public float getGridLineWidth() {
+        return gridLineWidth;
+    }
+
+    @Override
+    public void setGridLineWidth(float gridLineWidth) {
+        this.gridLineWidth = gridLineWidth;
+        gridLinePaint.setStrokeWidth(gridLineWidth);
+        invalidate();
+    }
+
+    @Override
+    public int getGridXDivisions() {
+        return gridXDivisions;
+    }
+
+    @Override
+    public void setGridXDivisions(int gridXDivisions) {
+        this.gridXDivisions = gridXDivisions;
+        invalidate();
+    }
+
+    @Override
+    public int getGridYDivisions() {
+        return gridYDivisions;
+    }
+
+    @Override
+    public void setGridYDivisions(int gridYDivisions) {
+        this.gridYDivisions = gridYDivisions;
         invalidate();
     }
 

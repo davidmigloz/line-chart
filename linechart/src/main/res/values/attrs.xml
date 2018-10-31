@@ -16,6 +16,11 @@
         </attr>
         <attr name="linechart_fillColor" format="color|reference" />
 
+        <attr name="linechart_gridLineColor" format="color|reference" />
+        <attr name="linechart_gridLineWidth" format="dimension|reference" />
+        <attr name="linechart_gridXDivisions" format="integer" />
+        <attr name="linechart_gridYDivisions" format="integer" />
+
         <attr name="linechart_baseLineColor" format="color|reference" />
         <attr name="linechart_baseLineWidth" format="dimension|reference" />
 

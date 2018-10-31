@@ -10,6 +10,7 @@ import com.davidmiguel.linechart.touch.OnScrubListener;
 
 import java.util.List;
 
+@SuppressWarnings("unused")
 public interface LineChart {
 
     /**
@@ -76,6 +77,47 @@ public interface LineChart {
      * Sets the color of the filling.
      */
     void setFillColor(@ColorInt int fillColor);
+
+    /**
+     * Gets the color of the grid line.
+     */
+    @ColorInt
+    int getGridLineColor();
+
+    /**
+     * Sets the color of the base line.
+     */
+    void setGridLineColor(@ColorInt int gridLineColor);
+
+    /**
+     * Gets the width in pixels of the grid line's stroke.
+     */
+    float getGridLineWidth();
+
+    /**
+     * Sets the width in pixels of the grid line's stroke.
+     */
+    void setGridLineWidth(float gridLineWidth);
+
+    /**
+     * Gets the number of grid divisions in X axis.
+     */
+    int getGridXDivisions();
+
+    /**
+     * Sets the number of grid divisions in X axis.
+     */
+    void setGridXDivisions(int gridXDivisions);
+
+    /**
+     * Gets the number of grid divisions in Y axis.
+     */
+    int getGridYDivisions();
+
+    /**
+     * Sets the number of grid divisions in Y axis.
+     */
+    void setGridYDivisions(int gridYDivisions);
 
     /**
      * Gets the color of the base line.
