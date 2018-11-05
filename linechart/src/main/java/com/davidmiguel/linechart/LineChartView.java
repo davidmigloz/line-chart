@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.CornerPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
 import android.os.Handler;
@@ -16,23 +17,27 @@ import android.os.Looper;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewConfiguration;
 
 import com.davidmiguel.linechart.animation.LineChartAnimator;
+import com.davidmiguel.linechart.model.Label;
 import com.davidmiguel.linechart.touch.OnScrubListener;
 import com.davidmiguel.linechart.touch.ScrubGestureDetector;
 import com.davidmiguel.linechart.utils.ScaleHelper;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-@SuppressWarnings("unused")
-public class LineChartView extends View implements LineChart, ScrubGestureDetector.ScrubListener {
-    
+@SuppressWarnings({"unused", "FieldCanBeLocal"})
+public class LineChartView extends View implements ScrubGestureDetector.ScrubListener, LineChart {
+
     // Styleable properties
     @ColorInt
     private int lineColor;
@@ -59,32 +64,54 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
     private int scrubLineColor;
     private float scrubLineWidth;
 
-    // Canvas
+    private float labelMargin;
+    @ColorInt
+    private int labelTextColor;
+    private float labelTextSize;
+    @ColorInt
+    private int labelBackgroundColor;
+    private float labelBackgroundRadius;
+    private float labelBackgroundPaddingHorizontal;
+    private float labelBackgroundPaddingVertical;
+
+    // How to draw
     private Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint gridLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint baseLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint scrubLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Path renderPath = new Path();
+    private TextPaint labelTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+    private Paint labelBackgroundPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+    private NumberFormat labelFormatter = new DecimalFormat("#");
+
+    // What to draw
     private final Path linePath = new Path();
+    private final Path fillPath = new Path();
     private final Path gridLinePath = new Path();
     private final Path baseLinePath = new Path();
     private final Path scrubLinePath = new Path();
+    private List<Float> gridLinesX;
+    private List<Float> gridLinesY;
+    private List<Label> labelsY;
+
+    // Data
+    @Nullable
+    private LineChartAdapter adapter;
     private ScaleHelper scaleHelper;
+    private List<Float> scaledXPoints; // Scaled x points
+    private List<Float> scaledYPoints; // Scaled y points
+    private final RectF drawingArea = new RectF();
+
+    // Touch
     private ScrubGestureDetector scrubGestureDetector;
     @Nullable
     private OnScrubListener scrubListener;
+
+    // Animation
     @Nullable
     private Animator pathAnimator;
     @Nullable
     private LineChartAnimator lineChartAnimator;
-
-    // Data
-    private List<Float> xPoints;
-    private List<Float> yPoints;
-    private final RectF contentRect = new RectF();
-    @Nullable
-    private LineChartAdapter adapter;
 
     public LineChartView(Context context) {
         super(context);
@@ -123,26 +150,36 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
      */
     private void processAttributes(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.LineChartView, defStyleAttr, defStyleRes);
+        try {
+            lineColor = a.getColor(R.styleable.LineChartView_linechart_lineColor, 0);
+            lineWidth = a.getDimension(R.styleable.LineChartView_linechart_lineWidth, 0);
+            cornerRadius = a.getDimension(R.styleable.LineChartView_linechart_cornerRadius, 0);
 
-        lineColor = a.getColor(R.styleable.LineChartView_linechart_lineColor, 0);
-        lineWidth = a.getDimension(R.styleable.LineChartView_linechart_lineWidth, 0);
-        cornerRadius = a.getDimension(R.styleable.LineChartView_linechart_cornerRadius, 0);
+            setFillType(a.getInt(R.styleable.LineChartView_linechart_fillType, LineChartFillType.NONE));
+            fillColor = a.getColor(R.styleable.LineChartView_linechart_fillColor, 0);
 
-        setFillType(a.getInt(R.styleable.LineChartView_linechart_fillType, LineChartFillType.NONE));
-        fillColor = a.getColor(R.styleable.LineChartView_linechart_fillColor, 0);
+            gridLineColor = a.getColor(R.styleable.LineChartView_linechart_gridLineColor, 0);
+            gridLineWidth = a.getDimension(R.styleable.LineChartView_linechart_gridLineWidth, 0);
+            gridXDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridXDivisions, 0);
+            gridYDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridYDivisions, 0);
 
-        gridLineColor = a.getColor(R.styleable.LineChartView_linechart_gridLineColor, 0);
-        gridLineWidth = a.getDimension(R.styleable.LineChartView_linechart_gridLineWidth, 0);
-        gridXDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridXDivisions, 0);
-        gridYDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridYDivisions, 0);
+            baseLineColor = a.getColor(R.styleable.LineChartView_linechart_baseLineColor, 0);
+            baseLineWidth = a.getDimension(R.styleable.LineChartView_linechart_baseLineWidth, 0);
 
-        baseLineColor = a.getColor(R.styleable.LineChartView_linechart_baseLineColor, 0);
-        baseLineWidth = a.getDimension(R.styleable.LineChartView_linechart_baseLineWidth, 0);
+            scrubEnabled = a.getBoolean(R.styleable.LineChartView_linechart_scrubEnabled, true);
+            scrubLineColor = a.getColor(R.styleable.LineChartView_linechart_scrubLineColor, 0);
+            scrubLineWidth = a.getDimension(R.styleable.LineChartView_linechart_scrubLineWidth, 0);
 
-        scrubEnabled = a.getBoolean(R.styleable.LineChartView_linechart_scrubEnabled, true);
-        scrubLineColor = a.getColor(R.styleable.LineChartView_linechart_scrubLineColor, baseLineColor);
-        scrubLineWidth = a.getDimension(R.styleable.LineChartView_linechart_scrubLineWidth, lineWidth);
-        a.recycle();
+            labelMargin = a.getDimension(R.styleable.LineChartView_linechart_labelMargin, 0);
+            labelTextColor = a.getColor(R.styleable.LineChartView_linechart_labelTextColor, 0);
+            labelTextSize = a.getDimension(R.styleable.LineChartView_linechart_labelTextSize, 0);
+            labelBackgroundColor = a.getColor(R.styleable.LineChartView_linechart_labelBackgroundColor, 0);
+            labelBackgroundRadius = a.getDimension(R.styleable.LineChartView_linechart_labelBackgroundRadius, 0);
+            labelBackgroundPaddingHorizontal = a.getDimension(R.styleable.LineChartView_linechart_labelBackgroundPaddingHorizontal, 0);
+            labelBackgroundPaddingVertical = a.getDimension(R.styleable.LineChartView_linechart_labelBackgroundPaddingVertical, 0);
+        } finally {
+            a.recycle();
+        }
     }
 
     /**
@@ -175,6 +212,12 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
         scrubLinePaint.setStrokeWidth(scrubLineWidth);
         scrubLinePaint.setColor(scrubLineColor);
         scrubLinePaint.setStrokeCap(Paint.Cap.ROUND);
+        // Labels
+        labelTextPaint.setColor(labelTextColor);
+        labelTextPaint.setTextSize(labelTextSize);
+        labelTextPaint.setTextAlign(Paint.Align.LEFT);
+        labelBackgroundPaint.setColor(labelBackgroundColor);
+        labelBackgroundPaint.setStyle(Paint.Style.FILL);
     }
 
     /**
@@ -192,8 +235,8 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
      * Configures the data structure where the chart data will be stored.
      */
     private void configDataStructure() {
-        xPoints = new ArrayList<>();
-        yPoints = new ArrayList<>();
+        scaledXPoints = new ArrayList<>();
+        scaledYPoints = new ArrayList<>();
     }
 
     /**
@@ -226,111 +269,164 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        // Called when the view is first assigned a size, and again if the size changes for any reason
+        // All calculations related to positions, dimensions, and any other values must be done here (not in onDraw)
         super.onSizeChanged(w, h, oldw, oldh);
-        updateContentRect();
-        populatePath();
+        calculateDrawingArea();
+        populatePaths();
     }
 
     @Override
     public void setPadding(int left, int top, int right, int bottom) {
         super.setPadding(left, top, right, bottom);
-        updateContentRect();
-        populatePath();
+        calculateDrawingArea();
+        populatePaths();
     }
 
     /**
-     * Gets the rect representing the 'content area' of the view. This is essentially the bounding
-     * rect minus any padding.
+     * Calculates the area where we can draw (essentially the bounding rect minus any padding).
+     * The area is represented in a rectangle.
      */
-    private void updateContentRect() {
-        contentRect.set(getPaddingStart(), getPaddingTop(),
+    private void calculateDrawingArea() {
+        drawingArea.set(getPaddingStart(), getPaddingTop(),
                 getWidth() - getPaddingEnd(),
                 getHeight() - getPaddingBottom());
     }
 
     /**
-     * Populates the path with points.
+     * Populates the path to draw.
      */
-    private void populatePath() {
+    private void populatePaths() {
         if (adapter == null || getWidth() == 0 || getHeight() == 0) {
             return;
         }
-
-        final int adapterCount = adapter.getCount();
-
+        final int numPoints = adapter.getCount();
         // To draw anything, we need 2 or more points
-        if (adapterCount < 2) {
+        if (numPoints < 2) {
             clearData();
             return;
         }
+        scaleHelper = new ScaleHelper(adapter, drawingArea, lineWidth, isFill());
+        // Populate paths
+        populateGrid();
+        populateLine(numPoints);
+        populateFilling(numPoints, linePath);
+        populateBaseLine();
+        populateLabels();
+        invalidate();
+    }
 
-        scaleHelper = new ScaleHelper(adapter, contentRect, lineWidth, isFill());
-
-        // Draw grid
-        final float gridLeft = contentRect.left;
-        final float gridBottom = contentRect.bottom;
-        final float gridTop = contentRect.top;
-        final float gridRight = contentRect.right;
-
+    /**
+     * Populates grid path.
+     */
+    private void populateGrid() {
         gridLinePath.reset();
-        float grid;
-        float guideLineSpacing = (gridBottom - gridTop) / gridYDivisions;
-        for (int i = 0; i < 10; i++) {
-            grid = gridTop + i * guideLineSpacing;
-            gridLinePath.moveTo(gridLeft, grid);
-            gridLinePath.lineTo(gridRight, grid);
+        final float gridLeft = drawingArea.left;
+        final float gridBottom = drawingArea.bottom;
+        final float gridTop = drawingArea.top;
+        final float gridRight = drawingArea.right;
+        float gridLineSpacing;
+        // Grid X axis
+        gridLinesX = new ArrayList<>(gridXDivisions);
+        gridLineSpacing = (gridRight - gridLeft) / gridXDivisions;
+        for (int i = 0; i < gridXDivisions; i++) {
+            gridLinesX.add(gridLeft + i * gridLineSpacing);
+            gridLinePath.moveTo(gridLinesX.get(i), gridTop);
+            gridLinePath.lineTo(gridLinesX.get(i), gridBottom);
         }
-        guideLineSpacing = (gridRight - gridLeft) / gridXDivisions;
-        for (int i = 0; i < 10; i++) {
-            grid = gridLeft + i * guideLineSpacing;
-            gridLinePath.moveTo(grid, gridTop);
-            gridLinePath.lineTo(grid, gridBottom);
+        // Grid Y axis
+        gridLinesY = new ArrayList<>(gridYDivisions);
+        gridLineSpacing = (gridBottom - gridTop) / gridYDivisions;
+        for (int i = 0; i < gridYDivisions; i++) {
+            gridLinesY.add(gridTop + i * gridLineSpacing);
+            gridLinePath.moveTo(gridLeft, gridLinesY.get(i));
+            gridLinePath.lineTo(gridRight, gridLinesY.get(i));
         }
+    }
 
-        // Make our main graph path
-        xPoints.clear();
-        yPoints.clear();
+    /**
+     * Populates line of chart.
+     */
+    @SuppressWarnings("ConstantConditions")
+    private void populateLine(int numPoints) {
         linePath.reset();
-        for (int i = 0; i < adapterCount; i++) {
+        scaledXPoints.clear();
+        scaledYPoints.clear();
+        for (int i = 0; i < numPoints; i++) {
+            // Scale points relative to the drawing area
             final float x = scaleHelper.getX(adapter.getX(i));
             final float y = scaleHelper.getY(adapter.getY(i));
-
-            // points to render graphic
-            // get points to animate
-            xPoints.add(x);
-            yPoints.add(y);
-
+            scaledXPoints.add(x);
+            scaledYPoints.add(y);
+            // Populate line path
             if (i == 0) {
                 linePath.moveTo(x, y);
             } else {
                 linePath.lineTo(x, y);
             }
         }
+    }
 
-        // if we're filling the graph in, close the path's circuit
+    /**
+     * Populates the filling of the line if enabled (linePath should be already populated).
+     */
+    private void populateFilling(int numPoints, Path linePath) {
+        fillPath.reset();
         final Float fillEdge = getFillEdge();
         if (fillEdge != null) {
-            final float lastX = scaleHelper.getX(adapter.getCount() - 1F);
-            // line up or down to the fill edge
-            linePath.lineTo(lastX, fillEdge);
-            // line straight left to far edge of the view
-            linePath.lineTo(getPaddingStart(), fillEdge);
-            // closes line back on the first point
-            linePath.close();
+            // Copy line path
+            fillPath.addPath(linePath);
+            // Line up or down to the fill edge
+            final float lastX = scaleHelper.getX(numPoints - 1F);
+            fillPath.lineTo(lastX, fillEdge);
+            // Line straight left to far edge of the view
+            fillPath.lineTo(getPaddingStart(), fillEdge);
+            // Closes line back on the first point
+            fillPath.close();
         }
+    }
 
-        // Make our base line path
+    /**
+     * Populates the base line path if enabled.
+     */
+    @SuppressWarnings("ConstantConditions")
+    private void populateBaseLine() {
         baseLinePath.reset();
         if (adapter.hasBaseLine()) {
             float scaledBaseLine = scaleHelper.getY(adapter.getBaseLine());
             baseLinePath.moveTo(0, scaledBaseLine);
             baseLinePath.lineTo(getWidth(), scaledBaseLine);
         }
+    }
 
-        renderPath.reset();
-        renderPath.addPath(linePath);
-
-        invalidate();
+    /**
+     * Populates labels.
+     */
+    private void populateLabels() {
+        labelsY = new ArrayList<>(gridLinesY.size() - 1);
+        String labelText;
+        Rect labelTextBounds = new Rect();
+        float labelTextX;
+        float labelTextY;
+        RectF background;
+        float bgLeft = drawingArea.left + labelMargin;
+        float bgTop;
+        float bgRight;
+        float bgBottom;
+        for (int i = 1; i < gridLinesY.size(); i++) { // No label in the last grid line
+            // Format text
+            labelText = labelFormatter.format(scaleHelper.getRawY(gridLinesY.get(i)));
+            // Calculate background
+            labelTextPaint.getTextBounds(labelText, 0, labelText.length(), labelTextBounds);
+            bgTop = gridLinesY.get(i) - labelTextBounds.height() / 2F - labelBackgroundPaddingVertical;
+            bgRight = bgLeft + labelTextBounds.width() + labelBackgroundPaddingHorizontal * 2;
+            bgBottom = bgTop + labelTextBounds.height() + labelBackgroundPaddingVertical * 2;
+            background = new RectF(bgLeft, bgTop, bgRight, bgBottom);
+            // Calculate text position
+            labelTextX = bgLeft + labelBackgroundPaddingHorizontal - labelTextBounds.left;
+            labelTextY = bgBottom - labelBackgroundPaddingVertical - labelTextBounds.bottom;
+            labelsY.add(new Label(background, labelTextX, labelTextY, labelText));
+        }
     }
 
     /**
@@ -338,23 +434,164 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
      */
     private void clearData() {
         scaleHelper = null;
-        renderPath.reset();
+        fillPath.reset();
         linePath.reset();
+        gridLinePath.reset();
         baseLinePath.reset();
         invalidate();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
+        // No allocations here, Allocate objects during initialization, or between animations. Never make an allocation while an animation is running.
+        // In addition to making onDraw() leaner, also make sure it's called as infrequently as possible. Most calls to onDraw() are the result of a call to invalidate(), so eliminate unnecessary calls to invalidate().
         super.onDraw(canvas);
         canvas.drawPath(gridLinePath, gridLinePaint);
         canvas.drawPath(baseLinePath, baseLinePaint);
         if (fillType != LineChartFillType.NONE) {
-            canvas.drawPath(renderPath, fillPaint);
+            canvas.drawPath(fillPath, fillPaint);
         }
-        canvas.drawPath(renderPath, linePaint);
+        canvas.drawPath(linePath, linePaint);
         canvas.drawPath(scrubLinePath, scrubLinePaint);
+        drawLabels(canvas);
     }
+
+    /**
+     * Draws chart labels in the canvas.
+     */
+    private void drawLabels(Canvas canvas) {
+        for (Label label : labelsY) {
+            canvas.drawRoundRect(label.getBackground(), labelBackgroundRadius, labelBackgroundRadius, labelBackgroundPaint);
+            canvas.drawText(label.getText(), label.getTextX(), label.getTextY(), labelTextPaint);
+        }
+    }
+
+    @Override
+    public void onScrubbed(float x, float y) {
+        if (adapter == null || adapter.getCount() == 0) {
+            return;
+        }
+        if (scrubListener != null) {
+            getParent().requestDisallowInterceptTouchEvent(true);
+            int index = getNearestIndex(scaledXPoints, x);
+            if (scrubListener != null) {
+                scrubListener.onScrubbed(adapter.getItem(index));
+            }
+        }
+        paintScrubLine(x);
+    }
+
+    /**
+     * Returns the nearest index (into {@link #adapter}'s data) for the given x coordinate.
+     */
+    private int getNearestIndex(List<Float> points, float x) {
+        int index = Collections.binarySearch(points, x);
+
+        // if binary search returns positive, we had an exact match, return that index
+        if (index >= 0) return index;
+
+        // otherwise, calculate the binary search's specified insertion index
+        index = -1 - index;
+
+        // if we're inserting at 0, then our guaranteed nearest index is 0
+        if (index == 0) return index;
+
+        // if we're inserting at the very end, then our guaranteed nearest index is the final one
+        if (index == points.size()) return --index;
+
+        // otherwise we need to check which of our two neighbors we're closer to
+        final float deltaUp = points.get(index) - x;
+        final float deltaDown = x - points.get(index - 1);
+        if (deltaUp > deltaDown) {
+            // if the below neighbor is closer, decrement our index
+            index--;
+        }
+
+        return index;
+    }
+
+    /**
+     * Paints scrub line.
+     */
+    private void paintScrubLine(float x) {
+        x = resolveBoundedScrubLine(x);
+        scrubLinePath.reset();
+        scrubLinePath.moveTo(x, getPaddingTop());
+        scrubLinePath.lineTo(x, getHeight() - getPaddingBottom());
+        invalidate();
+    }
+
+    /**
+     * Bounds the x coordinate of a scrub within the bounding rect minus padding and line width.
+     */
+    private float resolveBoundedScrubLine(float x) {
+        float scrubLineOffset = scrubLineWidth / 2;
+
+        float leftBound = getPaddingStart() + scrubLineOffset;
+        if (x < leftBound) {
+            return leftBound;
+        }
+
+        float rightBound = getWidth() - getPaddingEnd() - scrubLineOffset;
+        if (x > rightBound) {
+            return rightBound;
+        }
+
+        return x;
+    }
+
+    @Override
+    public void onScrubEnded() {
+        scrubLinePath.reset();
+        if (scrubListener != null) {
+            scrubListener.onScrubbed(null);
+        }
+        invalidate();
+    }
+
+    private final DataSetObserver dataSetObserver = new DataSetObserver() {
+        @Override
+        public void onChanged() {
+            super.onChanged();
+            populatePaths();
+            if (lineChartAnimator != null) {
+                doPathAnimation();
+            }
+        }
+
+        @Override
+        public void onInvalidated() {
+            super.onInvalidated();
+            clearData();
+        }
+    };
+
+    /**
+     * Performs the path animation.
+     */
+    private void doPathAnimation() {
+        if (pathAnimator != null) {
+            pathAnimator.cancel();
+        }
+
+        pathAnimator = getAnimator();
+
+        if (pathAnimator != null) {
+            pathAnimator.start();
+        }
+    }
+
+    /**
+     * Gets the Animator from the LineChartAnimator.
+     */
+    @Nullable
+    private Animator getAnimator() {
+        return lineChartAnimator != null ? lineChartAnimator.getAnimation(this) : null;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    //                                      Getters & Setters                                     //
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Nullable
     @Override
@@ -371,7 +608,7 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
         if (this.adapter != null) {
             this.adapter.registerDataSetObserver(dataSetObserver);
         }
-        populatePath();
+        populatePaths();
     }
 
     @ColorInt
@@ -427,7 +664,7 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
     public void setFillType(int fillType) {
         if (this.fillType != fillType) {
             this.fillType = fillType;
-            populatePath();
+            populatePaths();
         }
     }
 
@@ -615,144 +852,21 @@ public class LineChartView extends View implements LineChart, ScrubGestureDetect
 
     @Override
     public void setAnimationPath(@NonNull Path animationPath) {
-        this.renderPath.reset();
-        this.renderPath.addPath(animationPath);
-        this.renderPath.rLineTo(0, 0);
+        this.fillPath.reset();
+        this.fillPath.addPath(animationPath);
+        this.fillPath.rLineTo(0, 0);
         invalidate();
     }
 
     @NonNull
     @Override
     public List<Float> getXPoints() {
-        return new ArrayList<>(xPoints);
+        return new ArrayList<>(scaledXPoints);
     }
 
     @NonNull
     @Override
     public List<Float> getYPoints() {
-        return new ArrayList<>(yPoints);
-    }
-
-    @Override
-    public void onScrubbed(float x, float y) {
-        if (adapter == null || adapter.getCount() == 0) {
-            return;
-        }
-        if (scrubListener != null) {
-            getParent().requestDisallowInterceptTouchEvent(true);
-            int index = getNearestIndex(xPoints, x);
-            if (scrubListener != null) {
-                scrubListener.onScrubbed(adapter.getItem(index));
-            }
-        }
-        paintScrubLine(x);
-    }
-
-    /**
-     * Returns the nearest index (into {@link #adapter}'s data) for the given x coordinate.
-     */
-    private int getNearestIndex(List<Float> points, float x) {
-        int index = Collections.binarySearch(points, x);
-
-        // if binary search returns positive, we had an exact match, return that index
-        if (index >= 0) return index;
-
-        // otherwise, calculate the binary search's specified insertion index
-        index = -1 - index;
-
-        // if we're inserting at 0, then our guaranteed nearest index is 0
-        if (index == 0) return index;
-
-        // if we're inserting at the very end, then our guaranteed nearest index is the final one
-        if (index == points.size()) return --index;
-
-        // otherwise we need to check which of our two neighbors we're closer to
-        final float deltaUp = points.get(index) - x;
-        final float deltaDown = x - points.get(index - 1);
-        if (deltaUp > deltaDown) {
-            // if the below neighbor is closer, decrement our index
-            index--;
-        }
-
-        return index;
-    }
-
-    /**
-     * Paints scrub line.
-     */
-    private void paintScrubLine(float x) {
-        x = resolveBoundedScrubLine(x);
-        scrubLinePath.reset();
-        scrubLinePath.moveTo(x, getPaddingTop());
-        scrubLinePath.lineTo(x, getHeight() - getPaddingBottom());
-        invalidate();
-    }
-
-    /**
-     * Bounds the x coordinate of a scrub within the bounding rect minus padding and line width.
-     */
-    private float resolveBoundedScrubLine(float x) {
-        float scrubLineOffset = scrubLineWidth / 2;
-
-        float leftBound = getPaddingStart() + scrubLineOffset;
-        if (x < leftBound) {
-            return leftBound;
-        }
-
-        float rightBound = getWidth() - getPaddingEnd() - scrubLineOffset;
-        if (x > rightBound) {
-            return rightBound;
-        }
-
-        return x;
-    }
-
-    @Override
-    public void onScrubEnded() {
-        scrubLinePath.reset();
-        if (scrubListener != null) {
-            scrubListener.onScrubbed(null);
-        }
-        invalidate();
-    }
-
-    private final DataSetObserver dataSetObserver = new DataSetObserver() {
-        @Override
-        public void onChanged() {
-            super.onChanged();
-            populatePath();
-            if (lineChartAnimator != null) {
-                doPathAnimation();
-            }
-        }
-
-        @Override
-        public void onInvalidated() {
-            super.onInvalidated();
-            clearData();
-        }
-    };
-
-    /**
-     * Performs the path animation.
-     */
-    private void doPathAnimation() {
-        if (pathAnimator != null) {
-            pathAnimator.cancel();
-        }
-
-        pathAnimator = getAnimator();
-
-        if (pathAnimator != null) {
-            pathAnimator.start();
-        }
-    }
-
-    /**
-     * Gets the Animator from the LineChartAnimator.
-     */
-    @Nullable
-    private Animator getAnimator() {
-        return lineChartAnimator != null ? lineChartAnimator.getAnimation(this) : null;
+        return new ArrayList<>(scaledYPoints);
     }
 }

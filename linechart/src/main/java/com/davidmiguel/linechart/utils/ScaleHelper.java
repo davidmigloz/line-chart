@@ -8,16 +8,16 @@ import com.davidmiguel.linechart.LineChartAdapter;
 /**
  * Helper class for handling scaling logic.
  */
+@SuppressWarnings("FieldCanBeLocal")
 public class ScaleHelper {
 
-    // The width and height of the view
+    // Width and height of the view
     private final float width;
     private final float height;
-    private final int size;
-    // The scale factor for the Y values
+    // Scale factor
     private final float xScale;
     private final float yScale;
-    // Translates the Y values back into the bounding rect after being scaled
+    // Translation value
     private final float xTranslation;
     private final float yTranslation;
 
@@ -29,7 +29,6 @@ public class ScaleHelper {
         final float lineWidthOffset = fill ? 0 : lineWidth;
         this.width = contentRect.width() - lineWidthOffset;
         this.height = contentRect.height() - lineWidthOffset;
-        this.size = adapter.getCount();
 
         // Get data bounds from adapter
         RectF bounds = adapter.getDataBounds();
@@ -67,5 +66,13 @@ public class ScaleHelper {
      */
     public float getY(float rawY) {
         return height - (rawY * yScale) + yTranslation;
+    }
+
+    public float getRawX(float scaledX) {
+        return (scaledX - xTranslation) / xScale;
+    }
+
+    public float getRawY(float scaledY) {
+        return (height + yTranslation - scaledY) / yScale;
     }
 }

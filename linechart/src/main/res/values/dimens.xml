@@ -5,4 +5,9 @@
     <dimen name="linechart_grid_line_width">1dp</dimen>
     <dimen name="linechart_base_line_width">1dp</dimen>
     <dimen name="linechart_scrub_line_width">2dp</dimen>
+    <dimen name="linechart_labelMargin">8dp</dimen>
+    <dimen name="linechart_label_text_size">13sp</dimen>
+    <dimen name="linechart_labelBackgroundRadius">10dp</dimen>
+    <dimen name="linechart_labelBackgroundPaddingHorizontal">8dp</dimen>
+    <dimen name="linechart_labelBackgroundPaddingVertical">6dp</dimen>
 </resources>

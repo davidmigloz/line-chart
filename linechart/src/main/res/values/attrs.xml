@@ -27,5 +27,14 @@
         <attr name="linechart_scrubEnabled" format="boolean|reference" />
         <attr name="linechart_scrubLineColor" format="color|reference" />
         <attr name="linechart_scrubLineWidth" format="dimension|reference" />
+
+        <attr name="linechart_labelMargin" format="dimension|reference" />
+        <attr name="linechart_labelTextColor" format="color|reference" />
+        <attr name="linechart_labelTextSize" format="dimension|reference" />
+        <attr name="linechart_labelBackgroundColor" format="color|reference" />
+        <attr name="linechart_labelBackgroundRadius" format="dimension|reference" />
+        <attr name="linechart_labelBackgroundPaddingHorizontal" format="dimension|reference" />
+        <attr name="linechart_labelBackgroundPaddingVertical" format="dimension|reference" />
+
     </declare-styleable>
 </resources>

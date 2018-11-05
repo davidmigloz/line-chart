@@ -6,7 +6,7 @@
         <item name="linechart_lineWidth">@dimen/linechart_line_width</item>
         <item name="linechart_cornerRadius">@dimen/linechart_corner_radius</item>
 
-        <item name="linechart_fillType">none</item>
+        <item name="linechart_fillType">down</item>
         <item name="linechart_fillColor">@color/linechart_fill_color</item>
 
         <item name="linechart_gridLineColor">@color/linechart_grid_line_color</item>
@@ -20,5 +20,13 @@
         <item name="linechart_scrubEnabled">false</item>
         <item name="linechart_scrubLineColor">@color/linechart_scrub_line_color</item>
         <item name="linechart_scrubLineWidth">@dimen/linechart_scrub_line_width</item>
+
+        <item name="linechart_labelMargin">@dimen/linechart_labelMargin</item>
+        <item name="linechart_labelTextColor">@color/linechart_label_text_color</item>
+        <item name="linechart_labelTextSize">@dimen/linechart_label_text_size</item>
+        <item name="linechart_labelBackgroundColor">@color/linechart_labelBackgroundColor</item>
+        <item name="linechart_labelBackgroundRadius">@dimen/linechart_labelBackgroundRadius</item>
+        <item name="linechart_labelBackgroundPaddingHorizontal">@dimen/linechart_labelBackgroundPaddingHorizontal</item>
+        <item name="linechart_labelBackgroundPaddingVertical">@dimen/linechart_labelBackgroundPaddingVertical</item>
     </style>
 </resources>
