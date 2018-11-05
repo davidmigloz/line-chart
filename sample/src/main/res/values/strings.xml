@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Line Chart Sample</string>
+    <string name="month">Month</string>
+    <string name="all">All</string>
+    <string name="year">Year</string>
+    <string name="total">Total</string>
+    <string name="total_default">0</string>
 </resources>
