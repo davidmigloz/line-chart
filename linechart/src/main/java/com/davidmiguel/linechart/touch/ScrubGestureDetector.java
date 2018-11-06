@@ -18,16 +18,17 @@ package com.davidmiguel.linechart.touch;
 
 import android.annotation.SuppressLint;
 import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.view.MotionEvent;
 import android.view.View;
+
+import androidx.annotation.NonNull;
 
 /**
  * Exposes simple methods for detecting scrub events.
  */
 public class ScrubGestureDetector implements View.OnTouchListener {
 
-    static final long LONG_PRESS_TIMEOUT_MS = 250;
+    static final long LONG_PRESS_TIMEOUT_MS = 50;
 
     private final ScrubListener scrubListener;
     private final float touchSlop;

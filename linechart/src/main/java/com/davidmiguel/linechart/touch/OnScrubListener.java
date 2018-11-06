@@ -1,6 +1,6 @@
 package com.davidmiguel.linechart.touch;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /**
  * Listener for a user scrubbing (dragging their finger along) the graph.

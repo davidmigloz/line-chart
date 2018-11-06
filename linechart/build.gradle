@@ -39,7 +39,8 @@ dependencies {
     // Lib Dependencies
     //----------------------------------------------------------------------------------------------
 
-    implementation appDependencies.supportAnnotations
+    implementation appDependencies.androidXCore
+    implementation appDependencies.annotations
 
     //----------------------------------------------------------------------------------------------
     // Testing Dependencies

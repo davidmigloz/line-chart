@@ -32,6 +32,8 @@ android {
 
 dependencies {
     implementation project(':linechart')
-    implementation appDependencies.supportConstraintLayout
-    implementation appDependencies.supportAppCompat
+    implementation appDependencies.androidXCore
+    implementation appDependencies.annotations
+    implementation appDependencies.appcompat
+    implementation appDependencies.constraintLayout
 }

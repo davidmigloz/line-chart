@@ -1,9 +1,10 @@
 package com.davidmiguel.linechart.utils;
 
 import android.graphics.RectF;
-import android.support.annotation.NonNull;
 
 import com.davidmiguel.linechart.LineChartAdapter;
+
+import androidx.annotation.NonNull;
 
 /**
  * Helper class for handling scaling logic.

@@ -1,14 +1,15 @@
 package com.davidmiguel.linechart;
 
 import android.graphics.Path;
-import android.support.annotation.ColorInt;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import com.davidmiguel.linechart.animation.LineChartAnimator;
 import com.davidmiguel.linechart.touch.OnScrubListener;
 
 import java.util.List;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 @SuppressWarnings("unused")
 public interface LineChart {

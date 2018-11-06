@@ -1,13 +1,14 @@
 package com.davidmiguel.linechart.sample;
 
-import android.databinding.DataBindingUtil;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
 
 import com.davidmiguel.linechart.LineChartAdapter;
 import com.davidmiguel.linechart.LineChartFillType;
 import com.davidmiguel.linechart.sample.databinding.ActivityMainBinding;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.databinding.DataBindingUtil;
 
 public class MainActivity extends AppCompatActivity {
 

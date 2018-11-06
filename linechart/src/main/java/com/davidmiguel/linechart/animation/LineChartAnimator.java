@@ -1,9 +1,10 @@
 package com.davidmiguel.linechart.animation;
 
 import android.animation.Animator;
-import android.support.annotation.Nullable;
 
 import com.davidmiguel.linechart.LineChartView;
+
+import androidx.annotation.Nullable;
 
 /**
  * This interface is for animate SparkView when it changes

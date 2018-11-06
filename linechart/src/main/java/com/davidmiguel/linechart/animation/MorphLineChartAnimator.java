@@ -5,12 +5,13 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.graphics.Path;
-import android.support.annotation.IntRange;
-import android.support.annotation.Nullable;
 
 import com.davidmiguel.linechart.LineChartView;
 
 import java.util.List;
+
+import androidx.annotation.IntRange;
+import androidx.annotation.Nullable;
 
 /**
  * Animates each point vertically from the previous position to the current position.

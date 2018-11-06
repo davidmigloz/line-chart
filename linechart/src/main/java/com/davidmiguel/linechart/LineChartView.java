@@ -1,10 +1,12 @@
 package com.davidmiguel.linechart;
 
 import android.animation.Animator;
+import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.database.DataSetObserver;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.CornerPathEffect;
 import android.graphics.Paint;
@@ -14,9 +16,6 @@ import android.graphics.RectF;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.ColorInt;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
@@ -31,9 +30,15 @@ import com.davidmiguel.linechart.utils.ScaleHelper;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import static com.davidmiguel.linechart.utils.Utils.getBitmapFromVectorDrawable;
+import static com.davidmiguel.linechart.utils.Utils.getNearestIndex;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal"})
 public class LineChartView extends View implements ScrubGestureDetector.ScrubListener, LineChart {
@@ -81,8 +86,10 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     private Paint baseLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint scrubLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private TextPaint labelTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+    private int labelTextOriginalAlpha;
     private Paint labelBackgroundPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-    private NumberFormat labelFormatter = new DecimalFormat("#");
+    private int labelBackgroundOriginalAlpha;
+    private NumberFormat labelFormatter = new DecimalFormat("€ #");
 
     // What to draw
     private final Path linePath = new Path();
@@ -93,6 +100,10 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     private List<Float> gridLinesX;
     private List<Float> gridLinesY;
     private List<Label> labelsY;
+    private boolean isScrubEnabled = false;
+    private Bitmap scrubCursor = getBitmapFromVectorDrawable(getContext(), R.drawable.linechart_scrub_cursor);
+    private float scrubCursorX;
+    private float scrubCursorY;
 
     // Data
     @Nullable
@@ -112,6 +123,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     private Animator pathAnimator;
     @Nullable
     private LineChartAnimator lineChartAnimator;
+    ValueAnimator labelAlphaAnimator;
 
     public LineChartView(Context context) {
         super(context);
@@ -216,8 +228,10 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
         labelTextPaint.setColor(labelTextColor);
         labelTextPaint.setTextSize(labelTextSize);
         labelTextPaint.setTextAlign(Paint.Align.LEFT);
+        labelTextOriginalAlpha = labelTextPaint.getAlpha();
         labelBackgroundPaint.setColor(labelBackgroundColor);
         labelBackgroundPaint.setStyle(Paint.Style.FILL);
+        labelBackgroundOriginalAlpha = labelBackgroundPaint.getAlpha();
     }
 
     /**
@@ -430,91 +444,12 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     }
 
     /**
-     * Clears data to draw.
+     * Populates scrub cursor.
      */
-    private void clearData() {
-        scaleHelper = null;
-        fillPath.reset();
-        linePath.reset();
-        gridLinePath.reset();
-        baseLinePath.reset();
-        invalidate();
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        // No allocations here, Allocate objects during initialization, or between animations. Never make an allocation while an animation is running.
-        // In addition to making onDraw() leaner, also make sure it's called as infrequently as possible. Most calls to onDraw() are the result of a call to invalidate(), so eliminate unnecessary calls to invalidate().
-        super.onDraw(canvas);
-        canvas.drawPath(gridLinePath, gridLinePaint);
-        canvas.drawPath(baseLinePath, baseLinePaint);
-        if (fillType != LineChartFillType.NONE) {
-            canvas.drawPath(fillPath, fillPaint);
-        }
-        canvas.drawPath(linePath, linePaint);
-        canvas.drawPath(scrubLinePath, scrubLinePaint);
-        drawLabels(canvas);
-    }
-
-    /**
-     * Draws chart labels in the canvas.
-     */
-    private void drawLabels(Canvas canvas) {
-        for (Label label : labelsY) {
-            canvas.drawRoundRect(label.getBackground(), labelBackgroundRadius, labelBackgroundRadius, labelBackgroundPaint);
-            canvas.drawText(label.getText(), label.getTextX(), label.getTextY(), labelTextPaint);
-        }
-    }
-
-    @Override
-    public void onScrubbed(float x, float y) {
-        if (adapter == null || adapter.getCount() == 0) {
-            return;
-        }
-        if (scrubListener != null) {
-            getParent().requestDisallowInterceptTouchEvent(true);
-            int index = getNearestIndex(scaledXPoints, x);
-            if (scrubListener != null) {
-                scrubListener.onScrubbed(adapter.getItem(index));
-            }
-        }
-        paintScrubLine(x);
-    }
-
-    /**
-     * Returns the nearest index (into {@link #adapter}'s data) for the given x coordinate.
-     */
-    private int getNearestIndex(List<Float> points, float x) {
-        int index = Collections.binarySearch(points, x);
-
-        // if binary search returns positive, we had an exact match, return that index
-        if (index >= 0) return index;
-
-        // otherwise, calculate the binary search's specified insertion index
-        index = -1 - index;
-
-        // if we're inserting at 0, then our guaranteed nearest index is 0
-        if (index == 0) return index;
-
-        // if we're inserting at the very end, then our guaranteed nearest index is the final one
-        if (index == points.size()) return --index;
-
-        // otherwise we need to check which of our two neighbors we're closer to
-        final float deltaUp = points.get(index) - x;
-        final float deltaDown = x - points.get(index - 1);
-        if (deltaUp > deltaDown) {
-            // if the below neighbor is closer, decrement our index
-            index--;
-        }
-
-        return index;
-    }
-
-    /**
-     * Paints scrub line.
-     */
-    private void paintScrubLine(float x) {
+    private void populateScrubCursor(float x) {
         x = resolveBoundedScrubLine(x);
+        scrubCursorX = x;
+        scrubCursorY = drawingArea.centerY();
         scrubLinePath.reset();
         scrubLinePath.moveTo(x, getPaddingTop());
         scrubLinePath.lineTo(x, getHeight() - getPaddingBottom());
@@ -540,13 +475,115 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
         return x;
     }
 
+    /**
+     * Clears data to draw.
+     */
+    private void clearData() {
+        scaleHelper = null;
+        fillPath.reset();
+        linePath.reset();
+        gridLinePath.reset();
+        baseLinePath.reset();
+        invalidate();
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        // No allocations here, Allocate objects during initialization, or between animations. Never make an allocation while an animation is running.
+        // In addition to making onDraw() leaner, also make sure it's called as infrequently as possible. Most calls to onDraw() are the result of a call to invalidate(), so eliminate unnecessary calls to invalidate().
+        super.onDraw(canvas);
+        canvas.drawPath(gridLinePath, gridLinePaint);
+        canvas.drawPath(baseLinePath, baseLinePaint);
+        if (fillType != LineChartFillType.NONE) {
+            canvas.drawPath(fillPath, fillPaint);
+        }
+        canvas.drawPath(linePath, linePaint);
+        drawScrubCursor(canvas);
+        drawLabels(canvas);
+
+    }
+
+    /**
+     * Draws scrub cursor.
+     */
+    private void drawScrubCursor(Canvas canvas) {
+        if (isScrubEnabled) {
+            canvas.drawPath(scrubLinePath, scrubLinePaint);
+            canvas.drawBitmap(scrubCursor, scrubCursorX - scrubCursor.getWidth() / 2F, scrubCursorY - scrubCursor.getHeight() / 2F, scrubLinePaint);
+        }
+    }
+
+    /**
+     * Draws chart labels in the canvas.
+     */
+    private void drawLabels(Canvas canvas) {
+        for (Label label : labelsY) {
+            canvas.drawRoundRect(label.getBackground(), labelBackgroundRadius, labelBackgroundRadius, labelBackgroundPaint);
+            canvas.drawText(label.getText(), label.getTextX(), label.getTextY(), labelTextPaint);
+        }
+    }
+
+    @Override
+    public void onScrubbed(float x, float y) {
+        if (adapter == null || adapter.getCount() == 0) {
+            return;
+        }
+        if (!isScrubEnabled) {
+            hideLabels();
+        }
+        getParent().requestDisallowInterceptTouchEvent(true);
+        int index = getNearestIndex(scaledXPoints, x);
+        if (scrubListener != null) {
+            scrubListener.onScrubbed(adapter.getItem(index));
+        }
+        populateScrubCursor(x);
+        isScrubEnabled = true;
+    }
+
     @Override
     public void onScrubEnded() {
+        if(isScrubEnabled) {
+            showLabels();
+        }
         scrubLinePath.reset();
         if (scrubListener != null) {
             scrubListener.onScrubbed(null);
         }
+        isScrubEnabled = false;
         invalidate();
+    }
+
+    /**
+     * Decreases the alpha of the labels.
+     */
+    private void hideLabels() {
+        animateAlphaLabels(1, 0.3F);
+    }
+
+    /**
+     * Increases the alpha of the labels.
+     */
+    private void showLabels() {
+        animateAlphaLabels(0.3F, 1);
+    }
+
+    /**
+     * Animates the alpha of the labels.
+     */
+    private void animateAlphaLabels(float start, float end) {
+        // If animation was running, take the actual value and cancel animation
+        if(labelAlphaAnimator != null) {
+            start = (float) labelAlphaAnimator.getAnimatedValue();
+            labelAlphaAnimator.cancel();
+        }
+        labelAlphaAnimator = ValueAnimator.ofFloat(start, end);
+        labelAlphaAnimator.addUpdateListener(animation -> {
+            float index = (float) animation.getAnimatedValue();
+            labelTextPaint.setAlpha((int) (labelTextOriginalAlpha * index));
+            labelBackgroundPaint.setAlpha((int) (labelBackgroundOriginalAlpha * index));
+            invalidate();
+        });
+        labelAlphaAnimator.start();
     }
 
     private final DataSetObserver dataSetObserver = new DataSetObserver() {
