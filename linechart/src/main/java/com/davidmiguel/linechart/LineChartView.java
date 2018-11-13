@@ -517,6 +517,9 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
      * Draws chart labels in the canvas.
      */
     private void drawLabels(Canvas canvas) {
+        if(labelsY == null) {
+            return;
+        }
         for (Label label : labelsY) {
             canvas.drawRoundRect(label.getBackground(), labelBackgroundRadius, labelBackgroundRadius, labelBackgroundPaint);
             canvas.drawText(label.getText(), label.getTextX(), label.getTextY(), labelTextPaint);
