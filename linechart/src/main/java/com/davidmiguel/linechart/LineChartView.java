@@ -1,6 +1,7 @@
 package com.davidmiguel.linechart;
 
 import android.animation.Animator;
+import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -11,6 +12,7 @@ import android.graphics.Canvas;
 import android.graphics.CornerPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
@@ -100,10 +102,11 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     private List<Float> gridLinesX;
     private List<Float> gridLinesY;
     private List<Label> labelsY;
-    private boolean isScrubEnabled = false;
-    private Bitmap scrubCursor = getBitmapFromVectorDrawable(getContext(), R.drawable.linechart_scrub_cursor);
-    private float scrubCursorX;
-    private float scrubCursorY;
+    private Bitmap scrubCursorImg = getBitmapFromVectorDrawable(getContext(), R.drawable.linechart_scrub_cursor);
+    private PointF scrubCursorCurrentPos;
+    private PointF scrubCursorTargetPos;
+    private ValueAnimator scrubAnimator;
+    private Handler handler = new Handler(Looper.getMainLooper());
 
     // Data
     @Nullable
@@ -446,33 +449,26 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     /**
      * Populates scrub cursor.
      */
-    private void populateScrubCursor(float x) {
-        x = resolveBoundedScrubLine(x);
-        scrubCursorX = x;
-        scrubCursorY = drawingArea.centerY();
-        scrubLinePath.reset();
-        scrubLinePath.moveTo(x, getPaddingTop());
-        scrubLinePath.lineTo(x, getHeight() - getPaddingBottom());
+    private void populateScrubCursor(@NonNull PointF newScrubCursorTargetPos) {
+        if (scrubCursorCurrentPos == null) {
+            scrubCursorCurrentPos = scrubCursorTargetPos = newScrubCursorTargetPos;
+        } else if (newScrubCursorTargetPos.equals(scrubCursorTargetPos)) {
+            return;
+        } else {
+            scrubCursorTargetPos = newScrubCursorTargetPos;
+            PropertyValuesHolder animX = PropertyValuesHolder.ofFloat("x", scrubCursorCurrentPos.x, scrubCursorTargetPos.x);
+            PropertyValuesHolder animY = PropertyValuesHolder.ofFloat("y", scrubCursorCurrentPos.y, scrubCursorTargetPos.y);
+
+            scrubAnimator = new ValueAnimator();
+            scrubAnimator.setValues(animX, animY);
+            scrubAnimator.setDuration(50);
+            scrubAnimator.addUpdateListener(animation -> {
+                scrubCursorCurrentPos = new PointF((float) animation.getAnimatedValue("x"), (float) animation.getAnimatedValue("y"));
+                invalidate();
+            });
+            scrubAnimator.start();
+        }
         invalidate();
-    }
-
-    /**
-     * Bounds the x coordinate of a scrub within the bounding rect minus padding and line width.
-     */
-    private float resolveBoundedScrubLine(float x) {
-        float scrubLineOffset = scrubLineWidth / 2;
-
-        float leftBound = getPaddingStart() + scrubLineOffset;
-        if (x < leftBound) {
-            return leftBound;
-        }
-
-        float rightBound = getWidth() - getPaddingEnd() - scrubLineOffset;
-        if (x > rightBound) {
-            return rightBound;
-        }
-
-        return x;
     }
 
     /**
@@ -507,9 +503,8 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
      * Draws scrub cursor.
      */
     private void drawScrubCursor(Canvas canvas) {
-        if (isScrubEnabled) {
-            canvas.drawPath(scrubLinePath, scrubLinePaint);
-            canvas.drawBitmap(scrubCursor, scrubCursorX - scrubCursor.getWidth() / 2F, scrubCursorY - scrubCursor.getHeight() / 2F, scrubLinePaint);
+        if (scrubCursorCurrentPos != null) {
+            canvas.drawBitmap(scrubCursorImg, scrubCursorCurrentPos.x - scrubCursorImg.getWidth() / 2F, scrubCursorCurrentPos.y - scrubCursorImg.getHeight() / 2F, scrubLinePaint);
         }
     }
 
@@ -517,7 +512,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
      * Draws chart labels in the canvas.
      */
     private void drawLabels(Canvas canvas) {
-        if(labelsY == null) {
+        if (labelsY == null) {
             return;
         }
         for (Label label : labelsY) {
@@ -528,31 +523,36 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
 
     @Override
     public void onScrubbed(float x, float y) {
-        if (adapter == null || adapter.getCount() == 0) {
+        if (adapter == null || adapter.getCount() == 0 || (scrubAnimator != null && scrubAnimator.isRunning())) {
             return;
         }
-        if (!isScrubEnabled) {
-            hideLabels();
-        }
         getParent().requestDisallowInterceptTouchEvent(true);
+        if (scrubCursorTargetPos == null) {
+            hideLabels();
+            handler.removeCallbacksAndMessages(null);
+        }
         int index = getNearestIndex(scaledXPoints, x);
         if (scrubListener != null) {
             scrubListener.onScrubbed(adapter.getItem(index));
         }
-        populateScrubCursor(x);
-        isScrubEnabled = true;
+        populateScrubCursor(new PointF(scaleHelper.getX(adapter.getX(index)), scaleHelper.getY(adapter.getY(index))));
     }
 
     @Override
     public void onScrubEnded() {
-        if(isScrubEnabled) {
-            showLabels();
-        }
+        showLabels();
         scrubLinePath.reset();
         if (scrubListener != null) {
             scrubListener.onScrubbed(null);
         }
-        isScrubEnabled = false;
+        scrubAnimator.cancel();
+        scrubCursorCurrentPos = scrubCursorTargetPos;
+        scrubCursorTargetPos = null;
+        handler.postDelayed(this::hideCursor, 3000);
+    }
+
+    private void hideCursor() {
+        scrubCursorCurrentPos = null;
         invalidate();
     }
 
@@ -575,7 +575,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
      */
     private void animateAlphaLabels(float start, float end) {
         // If animation was running, take the actual value and cancel animation
-        if(labelAlphaAnimator != null) {
+        if (labelAlphaAnimator != null) {
             start = (float) labelAlphaAnimator.getAnimatedValue();
             labelAlphaAnimator.cancel();
         }
