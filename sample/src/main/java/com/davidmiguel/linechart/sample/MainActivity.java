@@ -1,9 +1,11 @@
 package com.davidmiguel.linechart.sample;
 
 import android.os.Bundle;
+import android.view.animation.AccelerateDecelerateInterpolator;
 
 import com.davidmiguel.linechart.LineChartAdapter;
 import com.davidmiguel.linechart.LineChartFillType;
+import com.davidmiguel.linechart.animation.MorphLineChartAnimator;
 import com.davidmiguel.linechart.sample.databinding.ActivityMainBinding;
 
 import androidx.annotation.NonNull;
@@ -28,10 +30,10 @@ public class MainActivity extends AppCompatActivity {
         binding.lineChart.setAdapter(adapter);
         binding.lineChart.setScrubListener(value -> binding.total.setText(value != null ? Float.toString((float) value) : ""));
         binding.lineChart.setFillType(LineChartFillType.DOWN);
-//        MorphLineChartAnimator morphSparkAnimator = new MorphLineChartAnimator();
-//        morphSparkAnimator.setDuration(2000L);
-//        morphSparkAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
-//        binding.lineChart.setLineChartAnimator(morphSparkAnimator);
+        MorphLineChartAnimator morphSparkAnimator = new MorphLineChartAnimator();
+        morphSparkAnimator.setDuration(2000L);
+        morphSparkAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+        binding.lineChart.setLineChartAnimator(morphSparkAnimator);
 
         binding.allBtn.setOnClickListener(v -> adapter.setData(DATA_ALL));
         binding.yearBtn.setOnClickListener(v -> adapter.setData(DATA_YEAR));

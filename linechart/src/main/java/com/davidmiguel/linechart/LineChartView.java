@@ -330,6 +330,10 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
         populateFilling(numPoints, linePath);
         populateBaseLine();
         populateLabels();
+        resetScrubCursor();
+        if (lineChartAnimator != null) {
+            doPathAnimation();
+        }
         invalidate();
     }
 
@@ -444,6 +448,14 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
             labelTextY = bgBottom - labelBackgroundPaddingVertical - labelTextBounds.bottom;
             labelsY.add(new Label(background, labelTextX, labelTextY, labelText));
         }
+    }
+
+    private void resetScrubCursor() {
+        if(scrubAnimator != null){
+            scrubAnimator.cancel();
+        }
+        handler.removeCallbacksAndMessages(null);
+        scrubCursorCurrentPos = scrubCursorTargetPos = null;
     }
 
     /**
@@ -594,9 +606,6 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
         public void onChanged() {
             super.onChanged();
             populatePaths();
-            if (lineChartAnimator != null) {
-                doPathAnimation();
-            }
         }
 
         @Override
@@ -892,9 +901,18 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
 
     @Override
     public void setAnimationPath(@NonNull Path animationPath) {
-        this.fillPath.reset();
-        this.fillPath.addPath(animationPath);
-        this.fillPath.rLineTo(0, 0);
+        this.linePath.reset();
+        this.linePath.addPath(animationPath);
+        this.linePath.rLineTo(0, 0);
+        fillPath.reset();
+        fillPath.addPath(linePath);
+        // Line up or down to the fill edge
+        final float lastX = scaleHelper.getX(adapter.getCount() - 1F);
+        fillPath.lineTo(lastX, getFillEdge());
+        // Line straight left to far edge of the view
+        fillPath.lineTo(getPaddingStart(), getFillEdge());
+        // Closes line back on the first point
+        fillPath.close();
         invalidate();
     }
 
@@ -908,5 +926,9 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     @Override
     public List<Float> getYPoints() {
         return new ArrayList<>(scaledYPoints);
+    }
+
+    public RectF getDrawingArea() {
+        return drawingArea;
     }
 }

@@ -51,7 +51,7 @@ public class MorphLineChartAnimator extends Animator implements LineChartAnimato
             for (int count = 0; count < size; count++) {
 
                 // get oldY, can be 0 (zero) if current points are larger
-                oldY = oldYPoints != null && oldYPoints.size() > count ? oldYPoints.get(count) : 0f;
+                oldY = oldYPoints != null ? oldYPoints.get(count * oldYPoints.size() / size) : lineChartView.getDrawingArea().bottom;
 
                 step = yPoints.get(count) - oldY;
                 y = (step * animatedValue) + oldY;
