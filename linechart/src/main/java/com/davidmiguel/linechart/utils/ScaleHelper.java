@@ -39,8 +39,8 @@ public class ScaleHelper {
 
         final float minX = bounds.left;
         final float maxX = bounds.right;
-        final float minY = bounds.top;
-        final float maxY = bounds.bottom;
+        final float minY = bounds.top == 0 ? 0 : (float) (bounds.top - bounds.height() * 0.1);
+        final float maxY = (float) (bounds.bottom + bounds.height() * 0.1);
         final float leftPadding = contentRect.left;
         final float topPadding = contentRect.top;
 
