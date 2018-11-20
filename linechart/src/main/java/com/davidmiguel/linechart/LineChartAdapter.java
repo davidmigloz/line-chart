@@ -31,6 +31,7 @@ import androidx.annotation.VisibleForTesting;
 public abstract class LineChartAdapter {
 
     private final DataSetObservable observable = new DataSetObservable();
+    private RectF dataBounds;
 
     /**
      * @return the number of points to be drawn.
@@ -71,25 +72,25 @@ public abstract class LineChartAdapter {
      */
     @NonNull
     public RectF getDataBounds() {
-        final int count = getCount();
-        final boolean hasBaseLine = hasBaseLine();
+        if (dataBounds == null) {
+            final int count = getCount();
+            final boolean hasBaseLine = hasBaseLine();
+            float minY = hasBaseLine ? getBaseLine() : Float.MAX_VALUE;
+            float maxY = hasBaseLine ? minY : -Float.MAX_VALUE;
+            float minX = Float.MAX_VALUE;
+            float maxX = -Float.MAX_VALUE;
+            for (int i = 0; i < count; i++) {
+                final float x = getX(i);
+                minX = Math.min(minX, x);
+                maxX = Math.max(maxX, x);
 
-        float minY = hasBaseLine ? getBaseLine() : Float.MAX_VALUE;
-        float maxY = hasBaseLine ? minY : -Float.MAX_VALUE;
-        float minX = Float.MAX_VALUE;
-        float maxX = -Float.MAX_VALUE;
-        for (int i = 0; i < count; i++) {
-            final float x = getX(i);
-            minX = Math.min(minX, x);
-            maxX = Math.max(maxX, x);
-
-            final float y = getY(i);
-            minY = Math.min(minY, y);
-            maxY = Math.max(maxY, y);
+                final float y = getY(i);
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+            }
+            dataBounds = createRectF(minX, minY, maxX, maxY);
         }
-
-        // set values on the return object
-        return createRectF(minX, minY, maxX, maxY);
+        return dataBounds;
     }
 
     /**
@@ -120,6 +121,7 @@ public abstract class LineChartAdapter {
      * reflecting the data set should refresh itself.
      */
     public final void notifyDataSetChanged() {
+        dataBounds = null;
         observable.notifyChanged();
     }
 
@@ -129,6 +131,7 @@ public abstract class LineChartAdapter {
      * changes.
      */
     public final void notifyDataSetInvalidated() {
+        dataBounds = null;
         observable.notifyInvalidated();
     }
 

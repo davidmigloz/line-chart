@@ -12,7 +12,7 @@
         <item name="linechart_gridLineColor">@color/linechart_grid_line_color</item>
         <item name="linechart_gridLineWidth">@dimen/linechart_grid_line_width</item>
         <item name="linechart_gridXDivisions">5</item>
-        <item name="linechart_gridYDivisions">7</item>
+        <item name="linechart_gridYDivisions">6</item>
 
         <item name="linechart_baseLineColor">@color/linechart_base_line_color</item>
         <item name="linechart_baseLineWidth">@dimen/linechart_base_line_width</item>

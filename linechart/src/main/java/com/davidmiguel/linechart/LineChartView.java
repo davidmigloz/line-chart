@@ -91,7 +91,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     private int labelTextOriginalAlpha;
     private Paint labelBackgroundPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     private int labelBackgroundOriginalAlpha;
-    private NumberFormat labelFormatter = new DecimalFormat("€ #");
+    private NumberFormat labelFormatter;
 
     // What to draw
     private final Path linePath = new Path();
@@ -300,6 +300,14 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
         populatePaths();
     }
 
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (scrubCursorImg != null) {
+            scrubCursorImg.recycle();
+        }
+    }
+
     /**
      * Calculates the area where we can draw (essentially the bounding rect minus any padding).
      * The area is represented in a rectangle.
@@ -323,7 +331,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
             clearData();
             return;
         }
-        scaleHelper = new ScaleHelper(adapter, drawingArea, lineWidth, isFill());
+        scaleHelper = new ScaleHelper(adapter, drawingArea, gridYDivisions);
         // Populate paths
         populateGrid();
         populateLine(numPoints);
@@ -423,7 +431,12 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     /**
      * Populates labels.
      */
+    @SuppressWarnings("ConstantConditions")
     private void populateLabels() {
+        // Set formatter
+        labelFormatter = new DecimalFormat(adapter.getDataBounds().height() < gridYDivisions ? "#.##" : "#");
+        // Populate labels
+
         labelsY = new ArrayList<>(gridLinesY.size() - 1);
         String labelText;
         Rect labelTextBounds = new Rect();
@@ -436,7 +449,8 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
         float bgBottom;
         for (int i = 1; i < gridLinesY.size(); i++) { // No label in the last grid line
             // Format text
-            labelText = labelFormatter.format(scaleHelper.getRawY(gridLinesY.get(i)));
+            // TODO extract line formatter so the client can implement their own
+            labelText = "€" + labelFormatter.format(scaleHelper.getRawY(gridLinesY.get(i)));
             // Calculate background
             labelTextPaint.getTextBounds(labelText, 0, labelText.length(), labelTextBounds);
             bgTop = gridLinesY.get(i) - labelTextBounds.height() / 2F - labelBackgroundPaddingVertical;
@@ -451,7 +465,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     }
 
     private void resetScrubCursor() {
-        if(scrubAnimator != null){
+        if (scrubAnimator != null) {
             scrubAnimator.cancel();
         }
         handler.removeCallbacksAndMessages(null);
@@ -899,20 +913,13 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
         this.lineChartAnimator = lineChartAnimator;
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public void setAnimationPath(@NonNull Path animationPath) {
-        this.linePath.reset();
-        this.linePath.addPath(animationPath);
-        this.linePath.rLineTo(0, 0);
-        fillPath.reset();
-        fillPath.addPath(linePath);
-        // Line up or down to the fill edge
-        final float lastX = scaleHelper.getX(adapter.getCount() - 1F);
-        fillPath.lineTo(lastX, getFillEdge());
-        // Line straight left to far edge of the view
-        fillPath.lineTo(getPaddingStart(), getFillEdge());
-        // Closes line back on the first point
-        fillPath.close();
+        linePath.reset();
+        linePath.addPath(animationPath);
+        linePath.rLineTo(0, 0);
+        populateFilling(adapter.getCount(), linePath);
         invalidate();
     }
 

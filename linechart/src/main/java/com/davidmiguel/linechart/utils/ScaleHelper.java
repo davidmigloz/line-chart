@@ -23,35 +23,46 @@ public class ScaleHelper {
     private final float yTranslation;
 
     public ScaleHelper(@NonNull LineChartAdapter adapter,
-                       @NonNull RectF contentRect,
-                       float lineWidth, boolean fill) {
-        // Subtract lineWidth to offset for 1/2 of the line bleeding out of the content box on either
-        // side of the view
-        final float lineWidthOffset = fill ? 0 : lineWidth;
-        this.width = contentRect.width() - lineWidthOffset;
-        this.height = contentRect.height() - lineWidthOffset;
+                       @NonNull RectF drawingArea, int numLabels) {
+        // Drawing size
+        this.width = drawingArea.width();
+        this.height = drawingArea.height();
 
         // Get data bounds from adapter
         RectF bounds = adapter.getDataBounds();
 
-        // If data is a line (which technically has no size), expand bounds to center the data
-        bounds.inset(bounds.width() == 0 ? -1 : 0, bounds.height() == 0 ? -1 : 0);
+        // If it's a horizontal line, expand vertical bonds
+        if (bounds.height() == 0) {
+            if (bounds.bottom == 0) {
+                bounds.bottom += numLabels;
+            } else if (bounds.bottom > 0) {
+                bounds.top = bounds.top - 1 >= 0 ? bounds.top - 1 : 0;
+                bounds.bottom++;
+            } else {
+                bounds.inset(0, -1);
+            }
+        }
+
+        // If it's a vertical line, expand horizontal bonds
+        if (bounds.width() == 0) {
+            bounds.inset(-1, 0);
+        }
 
         final float minX = bounds.left;
         final float maxX = bounds.right;
         final float minY = bounds.top == 0 ? 0 : (float) (bounds.top - bounds.height() * 0.1);
         final float maxY = (float) (bounds.bottom + bounds.height() * 0.1);
-        final float leftPadding = contentRect.left;
-        final float topPadding = contentRect.top;
+        final float leftPadding = drawingArea.left;
+        final float topPadding = drawingArea.top;
 
         // xScale will compress or expand the min and max x values to be just inside the view
         this.xScale = width / (maxX - minX);
         // xTranslation will move the x points back between 0 - width
-        this.xTranslation = leftPadding - (minX * xScale) + (lineWidthOffset / 2);
+        this.xTranslation = leftPadding - (minX * xScale);
         // yScale will compress or expand the min and max y values to be just inside the view
         this.yScale = height / (maxY - minY);
         // yTranslation will move the y points back between 0 - height
-        this.yTranslation = minY * yScale + topPadding + (lineWidthOffset / 2);
+        this.yTranslation = minY * yScale + topPadding;
     }
 
     /**
