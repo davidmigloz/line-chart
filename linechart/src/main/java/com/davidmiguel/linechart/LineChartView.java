@@ -105,7 +105,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     private Bitmap scrubCursorImg = getBitmapFromVectorDrawable(getContext(), R.drawable.linechart_scrub_cursor);
     private PointF scrubCursorCurrentPos;
     private PointF scrubCursorTargetPos;
-    private ValueAnimator scrubAnimator;
+    private ValueAnimator scrubAnimator = new ValueAnimator();
     private Handler handler = new Handler(Looper.getMainLooper());
 
     // Data
@@ -484,8 +484,6 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
             scrubCursorTargetPos = newScrubCursorTargetPos;
             PropertyValuesHolder animX = PropertyValuesHolder.ofFloat("x", scrubCursorCurrentPos.x, scrubCursorTargetPos.x);
             PropertyValuesHolder animY = PropertyValuesHolder.ofFloat("y", scrubCursorCurrentPos.y, scrubCursorTargetPos.y);
-
-            scrubAnimator = new ValueAnimator();
             scrubAnimator.setValues(animX, animY);
             scrubAnimator.setDuration(50);
             scrubAnimator.addUpdateListener(animation -> {
