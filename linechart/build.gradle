@@ -20,7 +20,7 @@ android {
         targetSdkVersion androidConfig.targetSdkVersion
         versionCode generateVersionCode(versionMajor, versionMinor, versionPatch)
         versionName generateVersionName(versionMajor, versionMinor, versionPatch, versionClassifier)
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
