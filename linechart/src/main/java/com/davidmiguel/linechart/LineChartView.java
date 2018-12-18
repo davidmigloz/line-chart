@@ -23,21 +23,21 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewConfiguration;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.davidmiguel.linechart.animation.LineChartAnimator;
+import com.davidmiguel.linechart.formatter.DefaultYAxisValueFormatter;
+import com.davidmiguel.linechart.formatter.YAxisValueFormatter;
 import com.davidmiguel.linechart.model.Label;
 import com.davidmiguel.linechart.touch.OnScrubListener;
 import com.davidmiguel.linechart.touch.ScrubGestureDetector;
 import com.davidmiguel.linechart.utils.ScaleHelper;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import static com.davidmiguel.linechart.utils.Utils.getBitmapFromVectorDrawable;
 import static com.davidmiguel.linechart.utils.Utils.getNearestIndex;
@@ -91,7 +91,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     private int labelTextOriginalAlpha;
     private Paint labelBackgroundPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     private int labelBackgroundOriginalAlpha;
-    private NumberFormat labelFormatter;
+    private YAxisValueFormatter yAxisValueFormatter;
 
     // What to draw
     private final Path linePath = new Path();
@@ -105,7 +105,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     private Bitmap scrubCursorImg = getBitmapFromVectorDrawable(getContext(), R.drawable.linechart_scrub_cursor);
     private PointF scrubCursorCurrentPos;
     private PointF scrubCursorTargetPos;
-    private ValueAnimator scrubAnimator = new ValueAnimator();
+    private ValueAnimator scrubAnimator;
     private Handler handler = new Handler(Looper.getMainLooper());
 
     // Data
@@ -241,6 +241,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
      * Configures the gesture detector to listen to user touches.
      */
     private void configGestureDetector(@NonNull Context context) {
+        scrubAnimator = new ValueAnimator();
         scrubGestureDetector = new ScrubGestureDetector(this,
                 new Handler(Looper.getMainLooper()),
                 ViewConfiguration.get(context).getScaledTouchSlop());
@@ -332,6 +333,10 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
             return;
         }
         scaleHelper = new ScaleHelper(adapter, drawingArea, gridYDivisions);
+        // Check formatter
+        if (yAxisValueFormatter == null) {
+            yAxisValueFormatter = new DefaultYAxisValueFormatter();
+        }
         // Populate paths
         populateGrid();
         populateLine(numPoints);
@@ -433,10 +438,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
      */
     @SuppressWarnings("ConstantConditions")
     private void populateLabels() {
-        // Set formatter
-        labelFormatter = new DecimalFormat(adapter.getDataBounds().height() < gridYDivisions ? "#.##" : "#");
         // Populate labels
-
         labelsY = new ArrayList<>(gridLinesY.size() - 1);
         String labelText;
         Rect labelTextBounds = new Rect();
@@ -449,8 +451,7 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
         float bgBottom;
         for (int i = 1; i < gridLinesY.size(); i++) { // No label in the last grid line
             // Format text
-            // TODO extract line formatter so the client can implement their own
-            labelText = "€" + labelFormatter.format(scaleHelper.getRawY(gridLinesY.get(i)));
+            labelText = yAxisValueFormatter.getFormattedValue(scaleHelper.getRawY(gridLinesY.get(i)), adapter.getDataBounds(), gridYDivisions);
             // Calculate background
             labelTextPaint.getTextBounds(labelText, 0, labelText.length(), labelTextBounds);
             bgTop = gridLinesY.get(i) - labelTextBounds.height() / 2F - labelBackgroundPaddingVertical;
@@ -829,6 +830,17 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
         invalidate();
     }
 
+    @Override
+    public YAxisValueFormatter getYAxisValueFormatter() {
+        return yAxisValueFormatter;
+    }
+
+    @Override
+    public void setYAxisValueFormatter(@Nullable YAxisValueFormatter yAxisValueFormatter) {
+        this.yAxisValueFormatter = yAxisValueFormatter != null ?
+                yAxisValueFormatter : new DefaultYAxisValueFormatter();
+    }
+
     @ColorInt
     @Override
     public int getBaseLineColor() {
@@ -936,4 +948,5 @@ public class LineChartView extends View implements ScrubGestureDetector.ScrubLis
     public RectF getDrawingArea() {
         return drawingArea;
     }
+
 }

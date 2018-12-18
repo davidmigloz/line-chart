@@ -2,14 +2,15 @@ package com.davidmiguel.linechart;
 
 import android.graphics.Path;
 
-import com.davidmiguel.linechart.animation.LineChartAnimator;
-import com.davidmiguel.linechart.touch.OnScrubListener;
-
-import java.util.List;
-
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.davidmiguel.linechart.animation.LineChartAnimator;
+import com.davidmiguel.linechart.formatter.YAxisValueFormatter;
+import com.davidmiguel.linechart.touch.OnScrubListener;
+
+import java.util.List;
 
 @SuppressWarnings("unused")
 public interface LineChart {
@@ -119,6 +120,17 @@ public interface LineChart {
      * Sets the number of grid divisions in Y axis.
      */
     void setGridYDivisions(int gridYDivisions);
+
+    /**
+     * Returns the formatter used to format labels in Y axis.
+     */
+    YAxisValueFormatter getYAxisValueFormatter();
+
+    /**
+     * Sets formatter used to format labels in Y axis.
+     * If null is passed, the default formatter will be used.
+     */
+    void setYAxisValueFormatter(@Nullable YAxisValueFormatter yAxisValueFormatter);
 
     /**
      * Gets the color of the base line.
