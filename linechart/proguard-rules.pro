@@ -20,4 +20,4 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep class com.davidmiguel.linechart.LineChartView { *; }
+-keep,allowobfuscation class com.davidmiguel.linechart.LineChartView { *; }
