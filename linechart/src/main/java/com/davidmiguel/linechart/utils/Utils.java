@@ -6,12 +6,13 @@ import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 
-import java.util.Collections;
-import java.util.List;
-
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 
+import java.util.Collections;
+import java.util.List;
+
+@SuppressWarnings("WeakerAccess")
 public class Utils {
 
     private Utils() {
@@ -52,7 +53,7 @@ public class Utils {
      */
     public static Bitmap getBitmapFromVectorDrawable(Context context, int drawableId) {
         Drawable drawable = ContextCompat.getDrawable(context, drawableId);
-        if(drawable == null) {
+        if (drawable == null) {
             throw new IllegalArgumentException("Invalid drawable");
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
@@ -64,5 +65,39 @@ public class Utils {
         drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
         drawable.draw(canvas);
         return bitmap;
+    }
+
+    /**
+     * Least common multiple (LCM).
+     */
+    public static float lcm(float a, float b) {
+        return a * (b / gcd(a, b));
+    }
+
+    /**
+     * Greatest Common Divisor (GCD).
+     */
+    public static float gcd(float a, float b) {
+        while (b > 0) {
+            float temp = b;
+            b = a % b; // % is remainder
+            a = temp;
+        }
+        return a;
+    }
+
+    /**
+     * Rounds number to the nearest multiple of the given multipleOf.
+     *
+     * @param number     number to round.
+     * @param multipleOf multiple used in the rounding.
+     * @param roundUp    if true ceil rounding if false floor rounding.
+     */
+    public static float round(float number, float multipleOf, boolean roundUp) {
+        if (roundUp) {
+            return (float) (Math.ceil((number / multipleOf)) * multipleOf);
+        } else {
+            return (float) Math.floor((number / multipleOf)) * multipleOf;
+        }
     }
 }

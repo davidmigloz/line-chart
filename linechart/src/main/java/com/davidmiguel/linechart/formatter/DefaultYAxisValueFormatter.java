@@ -21,6 +21,6 @@ public class DefaultYAxisValueFormatter implements YAxisValueFormatter {
     @NonNull
     @Override
     public String getFormattedValue(float value, @NonNull RectF dataBounds, int gridYDivisions) {
-        return formatter.format(value);
+        return formatter.format(value).replaceAll("^-(?=0(,0*)?$)", ""); // Remove - sign if 0
     }
 }
