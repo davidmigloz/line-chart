@@ -53,14 +53,16 @@ Take a look to [`attrs.xml`](https://github.com/davidmigloz/line-chart/blob/mast
 
 #### Methods
 
-Take a look to [`LineChart.java`](https://github.com/davidmigloz/line-chart/blob/master/linechart/src/main/java/com/davidmiguel/linechart/LineChart.java).
+Take a look to [`LineChart.java`](https://github.com/davidmigloz/line-chart/blob/master/linechart/src/main/java/com/davidmiguel/linechart/LineChart.kt).
 
 #### Callback
 
 If you want to listen to scrub events, you can use `OnScrubListener`:
 
 ```java
-lineChart.setScrubListener(value -> ...)
+lineChart.scrubListener = OnScrubListener { value: Any? ->
+    ...
+}
 ```
 
 Take a look at the [sample app](https://github.com/davidmigloz/line-chart/tree/master/sample) to see the library working.

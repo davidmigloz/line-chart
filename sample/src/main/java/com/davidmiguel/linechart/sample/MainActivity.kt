@@ -64,9 +64,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     class MyAdapter : LineChartAdapter() {
+
         private var yData = DATA_ALL
 
-        override fun getCount() =  yData.size
+        override val count: Int
+            get() = yData.size
 
         override fun getItem(index: Int) = yData[index]
 
