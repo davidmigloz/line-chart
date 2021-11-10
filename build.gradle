@@ -3,19 +3,21 @@ apply from: 'configurations.gradle'
 buildscript {
     repositories {
         google()
-        jcenter()
-        
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
     dependencies {
         apply from: 'dependencies.gradle'
         classpath gradleDependencies.androidGradle
+        classpath gradleDependencies.kotlinGradle
     }
 }
 
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
 }
 

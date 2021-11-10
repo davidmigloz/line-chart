@@ -1,14 +1,20 @@
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+}
 
 android {
-
     compileOptions {
         sourceCompatibility javaVersion
         targetCompatibility javaVersion
     }
 
+    kotlinOptions {
+        jvmTarget = kotlinJvmTarget
+    }
+
     compileSdkVersion androidConfig.compileSdkVersion
-    buildToolsVersion androidConfig.buildToolsVersion
 
     defaultConfig {
         applicationId "com.davidmiguel.linechart.sample"
@@ -25,15 +31,17 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-    dataBinding {
-        enabled = true
+
+    buildFeatures {
+        dataBinding = true
+        buildConfig = false
     }
 }
 
 dependencies {
     implementation project(':linechart')
-    implementation appDependencies.androidXCore
-    implementation appDependencies.annotations
-    implementation appDependencies.appcompat
-    implementation appDependencies.constraintLayout
+    implementation appDependencies.androidxCore
+    implementation appDependencies.androidxAnnotation
+    implementation appDependencies.androidxAppCompat
+    implementation appDependencies.androidxConstraintLayout
 }
