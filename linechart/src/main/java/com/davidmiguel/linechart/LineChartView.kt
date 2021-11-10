@@ -170,10 +170,10 @@ class LineChartView : View, ScrubListener, LineChart {
     private val gridLinePath = Path()
     private val baseLinePath = Path()
     private val scrubLinePath = Path()
-    private lateinit var gridLinesX: MutableList<Float>
-    private lateinit var gridLinesY: MutableList<Float>
-    private lateinit var labelsY: MutableList<Label>
-    private lateinit var scrubCursorImg: Bitmap
+    private var gridLinesX = mutableListOf<Float>()
+    private var gridLinesY = mutableListOf<Float>()
+    private var labelsY = mutableListOf<Label>()
+    private var scrubCursorImg: Bitmap? = null
     private var scrubCursorCurrentPos: PointF? = null
     private var scrubCursorTargetPos: PointF? = null
     private var scrubAnimator = ValueAnimator()
@@ -377,7 +377,7 @@ class LineChartView : View, ScrubListener, LineChart {
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        scrubCursorImg.recycle()
+        scrubCursorImg?.recycle()
     }
 
     /**
@@ -395,7 +395,6 @@ class LineChartView : View, ScrubListener, LineChart {
      */
     private fun populatePaths() {
         if (width == 0 || height == 0) return
-        scrubCursorImg = getBitmapFromVectorDrawable(context, R.drawable.linechart_scrub_cursor)
         val numPoints = adapter.count
         // To draw anything, we need 2 or more points
         if (numPoints < 2) {
@@ -403,6 +402,7 @@ class LineChartView : View, ScrubListener, LineChart {
             return
         }
         scaleHelper = ScaleHelper(adapter, drawingArea, gridYDivisions)
+        scrubCursorImg = getBitmapFromVectorDrawable(context, R.drawable.linechart_scrub_cursor)
         // Populate paths
         populateGrid()
         populateLine(numPoints)
@@ -410,9 +410,7 @@ class LineChartView : View, ScrubListener, LineChart {
         populateBaseLine()
         populateLabels()
         resetScrubCursor()
-        if (lineChartAnimator != null) {
-            doPathAnimation()
-        }
+        lineChartAnimator?.run { doPathAnimation() }
         invalidate()
     }
 
@@ -480,6 +478,35 @@ class LineChartView : View, ScrubListener, LineChart {
             fillPath.lineTo(paddingStart.toFloat(), fillEdge)
             // Closes line back on the first point
             fillPath.close()
+        }
+    }
+
+    /**
+     * Returns the fill edge relative to the fill type.
+     */
+    private fun getFillEdge(): Float? {
+        return when (fillType) {
+            LineChartFillType.NONE -> null
+            LineChartFillType.UP -> paddingTop.toFloat()
+            LineChartFillType.DOWN -> height.toFloat() - paddingBottom
+            LineChartFillType.TOWARD_ZERO -> {
+                val zero = scaleHelper.getY(0f)
+                val bottom = height.toFloat() - paddingBottom
+                zero.coerceAtMost(bottom)
+            }
+            else -> error("Unknown fill-type: $fillType")
+        }
+    }
+
+    /**
+     * Return whether or not this line chart should fill the area underneath.
+     */
+    private fun isFill(): Boolean {
+        return when (fillType) {
+            LineChartFillType.NONE -> false
+            LineChartFillType.UP, LineChartFillType.DOWN,
+            LineChartFillType.TOWARD_ZERO -> true
+            else -> error("Unknown fill-type: $fillType")
         }
     }
 
@@ -589,12 +616,14 @@ class LineChartView : View, ScrubListener, LineChart {
      */
     private fun drawScrubCursor(canvas: Canvas) {
         scrubCursorCurrentPos?.let { currentPos ->
-            canvas.drawBitmap(
-                scrubCursorImg,
-                currentPos.x - scrubCursorImg.width / 2f,
-                currentPos.y - scrubCursorImg.height / 2f,
-                scrubLinePaint
-            )
+            scrubCursorImg?.let { cursorImg ->
+                canvas.drawBitmap(
+                    cursorImg,
+                    currentPos.x - cursorImg.width / 2f,
+                    currentPos.y - cursorImg.height / 2f,
+                    scrubLinePaint
+                )
+            }
         }
     }
 
@@ -697,34 +726,5 @@ class LineChartView : View, ScrubListener, LineChart {
      */
     private fun getAnimator(): Animator? {
         return lineChartAnimator?.getAnimation(this)
-    }
-
-    /**
-     * Return whether or not this line chart should fill the area underneath.
-     */
-    private fun isFill(): Boolean {
-        return when (fillType) {
-            LineChartFillType.NONE -> false
-            LineChartFillType.UP, LineChartFillType.DOWN,
-            LineChartFillType.TOWARD_ZERO -> true
-            else -> error("Unknown fill-type: $fillType")
-        }
-    }
-
-    /**
-     * Returns the fill edge relative to the fill type.
-     */
-    private fun getFillEdge(): Float? {
-        return when (fillType) {
-            LineChartFillType.NONE -> null
-            LineChartFillType.UP -> paddingTop.toFloat()
-            LineChartFillType.DOWN -> height.toFloat() - paddingBottom
-            LineChartFillType.TOWARD_ZERO -> {
-                val zero = scaleHelper.getY(0f)
-                val bottom = height.toFloat() - paddingBottom
-                zero.coerceAtMost(bottom)
-            }
-            else -> throw IllegalStateException(String.format(Locale.US, "Unknown fill-type: %d", fillType))
-        }
     }
 }
