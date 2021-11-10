@@ -4,6 +4,7 @@
     <color name="linechart_fill_color">#a0000000</color>
     <color name="linechart_grid_line_color">#4DFFFFFF</color>
     <color name="linechart_base_line_color">#757577</color>
+    <color name="linechart_zero_line_color">#FFFFFF</color>
     <color name="linechart_scrub_line_color">#FFFFFF</color>
     <color name="linechart_label_text_color">#FFFFFF</color>
     <color name="linechart_labelBackgroundColor">#33000000</color>

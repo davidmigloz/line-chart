@@ -39,7 +39,6 @@ class MainActivity : AppCompatActivity() {
             scrubListener = OnScrubListener { value: Any? ->
                 binding.total.text = value?.toString() ?: ""
             }
-            fillType = LineChartFillType.DOWN
             lineChartAnimator = MorphLineChartAnimator().apply {
                 duration = 2000L
                 interpolator = AccelerateDecelerateInterpolator()
@@ -83,6 +82,6 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private val DATA_ALL = floatArrayOf(1f, 10f, 31f, 32f, 35f, 79f, 86f, 47f, 34f, 55f, 50f, 50f, 30f, 39f, 40f, 20f, 29f, 39f, 30f, 30f, 39f, 38f, 20f, 18f, 10f, 12f, 13f, 10f, 12f, 36f)
         private val DATA_YEAR = floatArrayOf(47f, 50f, 75f, 100f, 101f, 79f, 86f, 47f, 34f, 55f, 50f, 50f, 30f, 39f, 40f, 20f, 29f, 39f, 30f, 30f, 39f, 38f, 20f, 18f, 10f, 12f, 13f, 10f, 12f, 36f)
-        private val DATA_MONTH = floatArrayOf(68f, 22f, 31f, 57f, 35f, 79f, 86f, 47f, 34f, 55f, 80f, 72f, 99f, 66f, 47f, 42f, 56f, 64f, 66f, 80f, 97f, 10f, 43f, 12f, 25f, 71f, 47f, 73f, 49f, 36f)
+        private val DATA_MONTH = floatArrayOf(68f, 22f, 31f, 57f, 35f, 79f, 86f, 47f, 34f, 55f, -80f, -72f, -99f, -66f, 47f, 42f, 56f, 64f, 66f, 80f, 97f, 10f, 43f, 12f, 25f, 71f, 47f, 73f, 49f, 36f)
     }
 }

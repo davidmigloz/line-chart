@@ -24,6 +24,10 @@
         <attr name="linechart_baseLineColor" format="color|reference" />
         <attr name="linechart_baseLineWidth" format="dimension|reference" />
 
+        <attr name="linechart_zeroLineEnabled" format="boolean|reference" />
+        <attr name="linechart_zeroLineColor" format="color|reference" />
+        <attr name="linechart_zeroLineWidth" format="dimension|reference" />
+
         <attr name="linechart_scrubEnabled" format="boolean|reference" />
         <attr name="linechart_scrubLineColor" format="color|reference" />
         <attr name="linechart_scrubLineWidth" format="dimension|reference" />

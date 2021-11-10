@@ -82,6 +82,22 @@ interface LineChart {
     var baseLineWidth: Float
 
     /**
+     * Sets whether or not to show the zero line.
+     */
+    var isZeroLineEnabled: Boolean
+
+    /**
+     * Sets the color of the zero line.
+     */
+    @get:ColorInt
+    var zeroLineColor: Int
+
+    /**
+     * Sets the width in pixels of the zero line's stroke.
+     */
+    var zeroLineWidth: Float
+
+    /**
      * Sets whether or not to enable scrubbing on this view.
      */
     var isScrubEnabled: Boolean

@@ -47,11 +47,13 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:linechart_gridYDivisions="5"
             app:layout_constraintTop_toBottomOf="@+id/total"
             lib:linechart_fillColor="@color/rose"
+            lib:linechart_fillType="towardZero"
+            lib:linechart_gridXDivisions="5"
+            lib:linechart_gridYDivisions="5"
             lib:linechart_lineColor="@color/white"
-            lib:linechart_scrubEnabled="true" />
+            lib:linechart_zeroLineColor="@color/white"/>
 
         <Button
             android:id="@+id/allBtn"

@@ -35,23 +35,23 @@ class LineChartView : View, ScrubListener, LineChart {
     override var lineColor = 0
         set(value) {
             field = value
-            linePaint.color = lineColor
+            linePaint.color = value
             invalidate()
         }
 
     override var lineWidth = 0f
         set(value) {
             field = value
-            linePaint.strokeWidth = lineWidth
+            linePaint.strokeWidth = value
             invalidate()
         }
 
     override var cornerRadius = 0f
         set(value) {
             field = value
-            if (cornerRadius != 0f) {
-                linePaint.pathEffect = CornerPathEffect(cornerRadius)
-                fillPaint.pathEffect = CornerPathEffect(cornerRadius)
+            if (value != 0f) {
+                linePaint.pathEffect = CornerPathEffect(value)
+                fillPaint.pathEffect = CornerPathEffect(value)
             } else {
                 linePaint.pathEffect = null
                 fillPaint.pathEffect = null
@@ -72,7 +72,7 @@ class LineChartView : View, ScrubListener, LineChart {
     override var fillColor = 0
         set(value) {
             field = value
-            fillPaint.color = fillColor
+            fillPaint.color = value
             invalidate()
         }
 
@@ -80,14 +80,14 @@ class LineChartView : View, ScrubListener, LineChart {
     override var gridLineColor = 0
         set(value) {
             field = value
-            gridLinePaint.color = gridLineColor
+            gridLinePaint.color = value
             invalidate()
         }
 
     override var gridLineWidth = 0f
         set(value) {
             field = value
-            gridLinePaint.strokeWidth = gridLineWidth
+            gridLinePaint.strokeWidth = value
             invalidate()
         }
 
@@ -107,18 +107,39 @@ class LineChartView : View, ScrubListener, LineChart {
     override var baseLineColor = 0
         set(value) {
             field = value
-            baseLinePaint.color = baseLineColor
+            baseLinePaint.color = value
             invalidate()
         }
 
     override var baseLineWidth = 0f
         set(value) {
             field = value
-            baseLinePaint.strokeWidth = baseLineWidth
+            baseLinePaint.strokeWidth = value
             invalidate()
         }
 
-    override var isScrubEnabled = false
+    override var isZeroLineEnabled = true
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    @ColorInt
+    override var zeroLineColor = 0
+        set(value) {
+            field = value
+            zeroLinePaint.color = value
+            invalidate()
+        }
+
+    override var zeroLineWidth = 0f
+        set(value) {
+            field = value
+            zeroLinePaint.strokeWidth = value
+            invalidate()
+        }
+
+    override var isScrubEnabled = true
         set(value) {
             field = value
             scrubGestureDetector.enabled = value
@@ -157,6 +178,7 @@ class LineChartView : View, ScrubListener, LineChart {
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val gridLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val baseLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val zeroLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val scrubLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val labelTextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
     private var labelTextOriginalAlpha = 0
@@ -169,6 +191,7 @@ class LineChartView : View, ScrubListener, LineChart {
     private val fillPath = Path()
     private val gridLinePath = Path()
     private val baseLinePath = Path()
+    private val zeroLinePath = Path()
     private val scrubLinePath = Path()
     private var gridLinesX = mutableListOf<Float>()
     private var gridLinesY = mutableListOf<Float>()
@@ -263,6 +286,9 @@ class LineChartView : View, ScrubListener, LineChart {
             gridYDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridYDivisions, 0)
             baseLineColor = a.getColor(R.styleable.LineChartView_linechart_baseLineColor, 0)
             baseLineWidth = a.getDimension(R.styleable.LineChartView_linechart_baseLineWidth, 0f)
+            isZeroLineEnabled = a.getBoolean(R.styleable.LineChartView_linechart_zeroLineEnabled, true)
+            zeroLineColor = a.getColor(R.styleable.LineChartView_linechart_zeroLineColor, 0)
+            zeroLineWidth = a.getDimension(R.styleable.LineChartView_linechart_zeroLineWidth, 0f)
             isScrubEnabled = a.getBoolean(R.styleable.LineChartView_linechart_scrubEnabled, true)
             scrubLineColor = a.getColor(R.styleable.LineChartView_linechart_scrubLineColor, 0)
             scrubLineWidth = a.getDimension(R.styleable.LineChartView_linechart_scrubLineWidth, 0f)
@@ -310,6 +336,13 @@ class LineChartView : View, ScrubListener, LineChart {
             style = Paint.Style.STROKE
             color = baseLineColor
             strokeWidth = baseLineWidth
+        }
+        // Zero line
+        zeroLinePaint.apply {
+            style = Paint.Style.STROKE
+            color = zeroLineColor
+            strokeWidth = zeroLineWidth
+            pathEffect = DashPathEffect(floatArrayOf(15f, 15f), 0f)
         }
         // Scrub line
         scrubLinePaint.apply {
@@ -408,6 +441,7 @@ class LineChartView : View, ScrubListener, LineChart {
         populateLine(numPoints)
         populateFilling(numPoints, linePath)
         populateBaseLine()
+        populateZeroLine()
         populateLabels()
         resetScrubCursor()
         lineChartAnimator?.run { doPathAnimation() }
@@ -516,9 +550,22 @@ class LineChartView : View, ScrubListener, LineChart {
     private fun populateBaseLine() {
         baseLinePath.reset()
         if (adapter.hasBaseLine) {
-            val scaledBaseLine = scaleHelper.getY(adapter.baseLine)
-            baseLinePath.moveTo(0f, scaledBaseLine)
-            baseLinePath.lineTo(width.toFloat(), scaledBaseLine)
+            val baseLineXStart = drawingArea.left
+            val baseLineXEnd = drawingArea.right
+            val baselineY = scaleHelper.getY(adapter.baseLine)
+            baseLinePath.moveTo(baseLineXStart, baselineY)
+            baseLinePath.lineTo(baseLineXEnd, baselineY)
+        }
+    }
+
+    private fun populateZeroLine() {
+        zeroLinePath.reset()
+        if (isZeroLineEnabled && adapter.getDataBounds().top < 0) {
+            val zeroStart = drawingArea.left
+            val zeroEnd = drawingArea.right
+            val zeroY = scaleHelper.getY(0f)
+            zeroLinePath.moveTo(zeroStart, zeroY)
+            zeroLinePath.lineTo(zeroEnd, zeroY)
         }
     }
 
@@ -594,6 +641,7 @@ class LineChartView : View, ScrubListener, LineChart {
         linePath.reset()
         gridLinePath.reset()
         baseLinePath.reset()
+        zeroLinePath.reset()
         invalidate()
     }
 
@@ -602,10 +650,11 @@ class LineChartView : View, ScrubListener, LineChart {
         // In addition to making onDraw() leaner, also make sure it's called as infrequently as possible. Most calls to onDraw() are the result of a call to invalidate(), so eliminate unnecessary calls to invalidate().
         super.onDraw(canvas)
         canvas.drawPath(gridLinePath, gridLinePaint)
-        canvas.drawPath(baseLinePath, baseLinePaint)
         if (fillType != LineChartFillType.NONE) {
             canvas.drawPath(fillPath, fillPaint)
         }
+        canvas.drawPath(baseLinePath, baseLinePaint)
+        canvas.drawPath(zeroLinePath, zeroLinePaint)
         canvas.drawPath(linePath, linePaint)
         drawScrubCursor(canvas)
         drawLabels(canvas)

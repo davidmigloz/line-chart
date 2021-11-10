@@ -17,7 +17,11 @@
         <item name="linechart_baseLineColor">@color/linechart_base_line_color</item>
         <item name="linechart_baseLineWidth">@dimen/linechart_base_line_width</item>
 
-        <item name="linechart_scrubEnabled">false</item>
+        <item name="linechart_zeroLineEnabled">true</item>
+        <item name="linechart_zeroLineColor">@color/linechart_zero_line_color</item>
+        <item name="linechart_zeroLineWidth">@dimen/linechart_zero_line_width</item>
+
+        <item name="linechart_scrubEnabled">true</item>
         <item name="linechart_scrubLineColor">@color/linechart_scrub_line_color</item>
         <item name="linechart_scrubLineWidth">@dimen/linechart_scrub_line_width</item>
 
