@@ -173,7 +173,7 @@ class LineChartView : View, ScrubListener, LineChart {
     private lateinit var gridLinesX: MutableList<Float>
     private lateinit var gridLinesY: MutableList<Float>
     private lateinit var labelsY: MutableList<Label>
-    private val scrubCursorImg: Bitmap = getBitmapFromVectorDrawable(context, R.drawable.linechart_scrub_cursor)
+    private lateinit var scrubCursorImg: Bitmap
     private var scrubCursorCurrentPos: PointF? = null
     private var scrubCursorTargetPos: PointF? = null
     private var scrubAnimator = ValueAnimator()
@@ -395,6 +395,7 @@ class LineChartView : View, ScrubListener, LineChart {
      */
     private fun populatePaths() {
         if (width == 0 || height == 0) return
+        scrubCursorImg = getBitmapFromVectorDrawable(context, R.drawable.linechart_scrub_cursor)
         val numPoints = adapter.count
         // To draw anything, we need 2 or more points
         if (numPoints < 2) {

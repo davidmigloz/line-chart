@@ -4,3 +4,4 @@
 
 - Target Android 12 (API 31)
 - Update dependencies / Remove JCenter
+- Fix RuntimeException: trying to use a recycled bitmap
