@@ -51,6 +51,17 @@ class LineChartView @JvmOverloads constructor(
         get() = ArrayList(scaledXPoints)
     override val yPoints: List<Float>
         get() = ArrayList(scaledYPoints)
+    private val dataSetObserver: DataSetObserver = object : DataSetObserver() {
+        override fun onChanged() {
+            super.onChanged()
+            populatePaths()
+        }
+
+        override fun onInvalidated() {
+            super.onInvalidated()
+            clearData()
+        }
+    }
 
     // Styleable properties
     @ColorInt
@@ -739,11 +750,13 @@ class LineChartView @JvmOverloads constructor(
     override fun onScrubEnded() {
         showLabels()
         scrubLinePath.reset()
-        scrubListener?.onScrubbed(null)
         scrubAnimator.cancel()
         scrubCursorCurrentPos = scrubCursorTargetPos
         scrubCursorTargetPos = null
-        mainHandler.postDelayed({ hideCursor() }, 3000)
+        mainHandler.postDelayed({
+            scrubListener?.onScrubbed(null)
+            hideCursor()
+        }, 3000)
     }
 
     private fun hideCursor() {
@@ -803,18 +816,6 @@ class LineChartView @JvmOverloads constructor(
                 invalidate()
             }
             start()
-        }
-    }
-
-    private val dataSetObserver: DataSetObserver = object : DataSetObserver() {
-        override fun onChanged() {
-            super.onChanged()
-            populatePaths()
-        }
-
-        override fun onInvalidated() {
-            super.onInvalidated()
-            clearData()
         }
     }
 
