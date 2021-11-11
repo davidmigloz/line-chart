@@ -33,7 +33,7 @@ android {
     }
 
     buildFeatures {
-        dataBinding = true
+        viewBinding true
         buildConfig = false
     }
 }
@@ -42,6 +42,7 @@ dependencies {
     implementation project(':linechart')
     implementation appDependencies.androidxCore
     implementation appDependencies.androidxAnnotation
-    implementation appDependencies.androidxAppCompat
     implementation appDependencies.androidxConstraintLayout
+    implementation appDependencies.androidxAppCompat
+    implementation appDependencies.materialComponents
 }

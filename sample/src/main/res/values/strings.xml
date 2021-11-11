@@ -1,8 +1,11 @@
 <resources>
     <string name="app_name">Line Chart Sample</string>
-    <string name="month">Month</string>
-    <string name="all">All</string>
-    <string name="year">Year</string>
+    <string name="chartDefault">Default chart styles</string>
+    <string name="chartCustom">Custom chart styles</string>
+    <string name="chartAnimation">Chart animation</string>
+    <string name="btnMonth">Month</string>
+    <string name="btnAll">All</string>
+    <string name="btnYear">Year</string>
     <string name="total">Total</string>
-    <string name="total_default">0</string>
+    <string name="total_default">-</string>
 </resources>

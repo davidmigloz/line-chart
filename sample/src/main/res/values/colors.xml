@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
     <color name="white">#FFFFFF</color>
     <color name="rose">#80D84E62</color>
     <color name="softPink">#F6A7B5</color>
+    <color name="water_blue">#0b88c4</color>
+    <color name="dark_blue">#8000A5F4</color>
+    <color name="black_30">#4c000000</color>
+    <color name="black">#000000</color>
+    <color name="very_light_grey">#ebebeb</color>
 </resources>

@@ -11,13 +11,16 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".ChartDefaultActivity" />
+        <activity android:name=".ChartCustomActivity" />
+        <activity android:name=".ChartAnimationActivity" />
     </application>
 </manifest>

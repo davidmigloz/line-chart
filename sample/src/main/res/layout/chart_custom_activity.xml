@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:lib="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/softPink"
+    tools:context=".ChartCustomActivity">
+
+    <com.davidmiguel.linechart.LineChartView
+        android:id="@+id/lineChart"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toTopOf="@id/totalLabel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        lib:linechart_baseLineColor="@color/black"
+        lib:linechart_baseLineWidth="2dp"
+        lib:linechart_cornerRadius="3dp"
+        lib:linechart_fillColor="@color/dark_blue"
+        lib:linechart_fillType="up"
+        lib:linechart_gridLineColor="@color/very_light_grey"
+        lib:linechart_gridLineWidth="1dp"
+        lib:linechart_labelBackgroundColor="@color/white"
+        lib:linechart_labelBackgroundPaddingHorizontal="10dp"
+        lib:linechart_labelBackgroundPaddingVertical="10dp"
+        lib:linechart_labelBackgroundRadius="20dp"
+        lib:linechart_labelMargin="12dp"
+        lib:linechart_labelTextColor="@color/rose"
+        lib:linechart_labelTextSize="14sp"
+        lib:linechart_lineColor="@color/white"
+        lib:linechart_lineWidth="4dp" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/rose"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/lineChart" />
+
+    <TextView
+        android:id="@+id/totalLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="@string/total"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toTopOf="@id/total"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/total"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/total_default"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
