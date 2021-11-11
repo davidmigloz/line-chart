@@ -12,7 +12,7 @@
             <enum name="none" value="0" />
             <enum name="up" value="1" />
             <enum name="down" value="2" />
-            <enum name="towardZero" value="3" />
+            <enum name="towardsZero" value="3" />
         </attr>
         <attr name="linechart_fillColor" format="color|reference" />
         <attr name="linechart_gridLineColor" format="color|reference" />

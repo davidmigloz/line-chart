@@ -6,7 +6,7 @@
         <item name="linechart_lineColor">@color/linechart_line_color</item>
         <item name="linechart_lineWidth">@dimen/linechart_line_width</item>
         <item name="linechart_cornerRadius">@dimen/linechart_corner_radius</item>
-        <item name="linechart_fillType">down</item>
+        <item name="linechart_fillType">towardsZero</item>
         <item name="linechart_fillColor">@color/linechart_fill_color</item>
         <item name="linechart_gridLineColor">@color/linechart_grid_line_color</item>
         <item name="linechart_gridLineWidth">@dimen/linechart_grid_line_width</item>

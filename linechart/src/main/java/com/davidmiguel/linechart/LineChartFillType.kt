@@ -3,7 +3,7 @@ package com.davidmiguel.linechart
 import androidx.annotation.IntDef
 import com.davidmiguel.linechart.LineChartFillType.Companion.DOWN
 import com.davidmiguel.linechart.LineChartFillType.Companion.NONE
-import com.davidmiguel.linechart.LineChartFillType.Companion.TOWARD_ZERO
+import com.davidmiguel.linechart.LineChartFillType.Companion.TOWARDS_ZERO
 import com.davidmiguel.linechart.LineChartFillType.Companion.UP
 
 /**
@@ -11,7 +11,7 @@ import com.davidmiguel.linechart.LineChartFillType.Companion.UP
  * setFillType(int).
  */
 @Retention(AnnotationRetention.SOURCE)
-@IntDef(NONE, UP, DOWN, TOWARD_ZERO)
+@IntDef(NONE, UP, DOWN, TOWARDS_ZERO)
 annotation class LineChartFillType {
     companion object {
         /**
@@ -34,6 +34,6 @@ annotation class LineChartFillType {
          * positive, or upward if your sparkline is negative. If your sparkline intersects zero,
          * each segment will still color toward zero.
          */
-        const val TOWARD_ZERO = 3
+        const val TOWARDS_ZERO = 3
     }
 }

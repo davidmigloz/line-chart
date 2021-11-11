@@ -322,7 +322,7 @@ class LineChartView @JvmOverloads constructor(
             lineColor = a.getColor(R.styleable.LineChartView_linechart_lineColor, 0)
             lineWidth = a.getDimension(R.styleable.LineChartView_linechart_lineWidth, 0f)
             cornerRadius = a.getDimension(R.styleable.LineChartView_linechart_cornerRadius, 0f)
-            fillType = a.getInt(R.styleable.LineChartView_linechart_fillType, LineChartFillType.NONE)
+            fillType = a.getInt(R.styleable.LineChartView_linechart_fillType, LineChartFillType.TOWARDS_ZERO)
             fillColor = a.getColor(R.styleable.LineChartView_linechart_fillColor, 0)
             gridLineColor = a.getColor(R.styleable.LineChartView_linechart_gridLineColor, 0)
             gridLineWidth = a.getDimension(R.styleable.LineChartView_linechart_gridLineWidth, 0f)
@@ -550,7 +550,7 @@ class LineChartView @JvmOverloads constructor(
             LineChartFillType.NONE -> null
             LineChartFillType.UP -> paddingTop.toFloat()
             LineChartFillType.DOWN -> height.toFloat() - paddingBottom
-            LineChartFillType.TOWARD_ZERO -> {
+            LineChartFillType.TOWARDS_ZERO -> {
                 val zero = scaleHelper.getY(0f)
                 val bottom = height.toFloat() - paddingBottom
                 zero.coerceAtMost(bottom)
@@ -566,7 +566,7 @@ class LineChartView @JvmOverloads constructor(
         return when (fillType) {
             LineChartFillType.NONE -> false
             LineChartFillType.UP, LineChartFillType.DOWN,
-            LineChartFillType.TOWARD_ZERO -> true
+            LineChartFillType.TOWARDS_ZERO -> true
             else -> error("Unknown fill-type: $fillType")
         }
     }
