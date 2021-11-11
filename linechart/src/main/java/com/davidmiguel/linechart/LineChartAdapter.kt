@@ -52,7 +52,7 @@ abstract class LineChartAdapter {
     fun getDataBounds(): RectF {
         return dataBounds ?: run {
             val count = count
-            var minY = if (hasBaseLine) baseLine else Float.MAX_VALUE
+            var minY = if (hasBaseLine) baseLine!! else Float.MAX_VALUE
             var maxY = if (hasBaseLine) minY else -Float.MAX_VALUE
             var minX = Float.MAX_VALUE
             var maxX = -Float.MAX_VALUE
@@ -81,13 +81,12 @@ abstract class LineChartAdapter {
      * to compare the rest of the graph's points against.
      */
     val hasBaseLine: Boolean
-        get() = false
+        get() = baseLine != null
 
     /**
      * @return the float representation of the Y value of the desired baseLine.
      */
-    val baseLine: Float
-        get() = 0f
+    var baseLine: Float? = null
 
     /**
      * Notifies the attached observers that the underlying data has been changed and any View

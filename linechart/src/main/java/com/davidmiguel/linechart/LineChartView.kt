@@ -589,7 +589,7 @@ class LineChartView @JvmOverloads constructor(
         if (adapter.hasBaseLine) {
             val baseLineXStart = drawingArea.left
             val baseLineXEnd = drawingArea.right
-            val baselineY = scaleHelper.getY(adapter.baseLine)
+            val baselineY = scaleHelper.getY(adapter.baseLine!!)
             baseLinePath.moveTo(baseLineXStart, baselineY)
             baseLinePath.lineTo(baseLineXEnd, baselineY)
         }
