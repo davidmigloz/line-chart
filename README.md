@@ -2,6 +2,18 @@
 
 A simple Android line chart library.
 
+**Features:**
+- Auto-scaling drawing area and labels
+- Grid lines
+- Baseline
+- Zero line
+- Different filling modes
+- Custom label formatters
+- Scrubbing support
+- Data change animations
+- Fully customizable styles
+- Theme-friendly
+
 Screenshot of the library being used in a real app:
 
 <img src="doc/real.png" width="250" />
@@ -21,7 +33,7 @@ Add the JitPack repository to your `build.gradle` file:
 ```gradle
 allprojects {
 	repositories {
-		...
+		//...
 		maven { url "https://jitpack.io" }
 	}
 }
@@ -33,7 +45,7 @@ Add the dependency:
 
 ```gradle
 dependencies {
-	implementation 'com.github.davidmigloz:line-chart:1.0.0'
+	implementation 'com.github.davidmigloz:line-chart:2.1.0'
 }
 ```
 
@@ -50,9 +62,9 @@ Use `LineChartView` in your layout:
     android:layout_height="0dp"
     app:linechart_gridXDivisions="5"
     app:linechart_gridYDivisions="5"
-    chart:linechart_fillColor="#80d84e62"
-    chart:linechart_lineColor="@color/white"
-    chart:linechart_scrubEnabled="true" />
+    app:linechart_fillColor="@color/blue"
+    app:linechart_lineColor="@color/white"
+    app:linechart_scrubEnabled="false" />
 ```
 
 #### XML attributes
@@ -61,21 +73,21 @@ Take a look to [`attrs.xml`](https://github.com/davidmigloz/line-chart/blob/mast
 
 #### Methods
 
-Take a look to [`LineChart.java`](https://github.com/davidmigloz/line-chart/blob/master/linechart/src/main/java/com/davidmiguel/linechart/LineChart.kt).
+Take a look to [`LineChart.kt`](https://github.com/davidmigloz/line-chart/blob/master/linechart/src/main/java/com/davidmiguel/linechart/LineChart.kt).
 
-#### Callback
+#### Listeners
 
-If you want to listen to scrub events, you can use `OnScrubListener`:
+If you want to listen to scrub events, you can register a `OnScrubListener`:
 
-```java
+```kotlin
 lineChart.scrubListener = OnScrubListener { value: Any? ->
-    ...
+    //...
 }
 ```
 
 ## Contributing
 
-If you find any issues or you have any questions, ideas... feel free to [open an issue](https://github.com/davidmigloz/line-chart/issues/new).
+If you find any issues or have any questions, ideas... feel free to [open an issue](https://github.com/davidmigloz/line-chart/issues/new).
 Pull request are very appreciated.
 
 ## Credits
