@@ -2,7 +2,15 @@
 
 A simple Android line chart library.
 
-![Screenshot](img/screenshot.gif)
+Screenshot of the library being used in a real app:
+
+<img src="doc/real.png" width="250" />
+
+Take a look at the [sample app](https://github.com/davidmigloz/line-chart/tree/master/sample) to see the library working.
+
+| Default                        | Custom styles                 | Animation                        |
+|--------------------------------|-------------------------------|----------------------------------|
+| <img src="doc/default.png" width="220" /> | <img src="doc/custom.png" width="220" /> | <img src="doc/animation.gif" width="220" /> |
 
 ## Usage
 
@@ -65,12 +73,14 @@ lineChart.scrubListener = OnScrubListener { value: Any? ->
 }
 ```
 
-Take a look at the [sample app](https://github.com/davidmigloz/line-chart/tree/master/sample) to see the library working.
-
 ## Contributing
 
 If you find any issues or you have any questions, ideas... feel free to [open an issue](https://github.com/davidmigloz/line-chart/issues/new).
 Pull request are very appreciated.
+
+## Credits
+
+This library is inspired by the power of [MPAndroidChart](https://github.com/PhilJay/MPAndroidChart) and the simplicity of [Spark](https://github.com/robinhood/spark).
 
 ## License
 

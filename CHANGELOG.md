@@ -1,5 +1,12 @@
 # Changelog line-chart
 
+## `2.1.0` (11/11/21)
+
+- Fix baseline
+- Fix scrub ended event sent before animation ended
+- Set toward zero as default fill type and fix typo
+- Improve sample app
+
 ## `2.0.0` (11/11/21)
 
 - BREAKING CHANGE: minSdkVersion increased to 21 (Lollipop)
