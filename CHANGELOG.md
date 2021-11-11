@@ -1,5 +1,10 @@
 # Changelog line-chart
 
+## `2.0.0` (11/11/21)
+
+- BREAKING CHANGE: minSdkVersion increased to 21 (Lollipop)
+- Add zero label
+
 ## `1.1.0` (10/11/21)
 
 - Add zero line

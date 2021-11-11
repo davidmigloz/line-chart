@@ -3,10 +3,10 @@
     <attr name="linechart_LineChartViewStyle" format="reference" />
 
     <declare-styleable name="LineChartView">
+        <!-- Styleable properties -->
         <attr name="linechart_lineColor" format="color|reference" />
         <attr name="linechart_lineWidth" format="dimension|reference" />
         <attr name="linechart_cornerRadius" format="dimension|reference" />
-
         <attr name="linechart_fillType" format="enum">
             <!-- must match values in LineChartFillType -->
             <enum name="none" value="0" />
@@ -15,23 +15,12 @@
             <enum name="towardZero" value="3" />
         </attr>
         <attr name="linechart_fillColor" format="color|reference" />
-
         <attr name="linechart_gridLineColor" format="color|reference" />
         <attr name="linechart_gridLineWidth" format="dimension|reference" />
-        <attr name="linechart_gridXDivisions" format="integer" />
-        <attr name="linechart_gridYDivisions" format="integer" />
-
         <attr name="linechart_baseLineColor" format="color|reference" />
         <attr name="linechart_baseLineWidth" format="dimension|reference" />
-
-        <attr name="linechart_zeroLineEnabled" format="boolean|reference" />
         <attr name="linechart_zeroLineColor" format="color|reference" />
         <attr name="linechart_zeroLineWidth" format="dimension|reference" />
-
-        <attr name="linechart_scrubEnabled" format="boolean|reference" />
-        <attr name="linechart_scrubLineColor" format="color|reference" />
-        <attr name="linechart_scrubLineWidth" format="dimension|reference" />
-
         <attr name="linechart_labelMargin" format="dimension|reference" />
         <attr name="linechart_labelTextColor" format="color|reference" />
         <attr name="linechart_labelTextSize" format="dimension|reference" />
@@ -39,6 +28,15 @@
         <attr name="linechart_labelBackgroundRadius" format="dimension|reference" />
         <attr name="linechart_labelBackgroundPaddingHorizontal" format="dimension|reference" />
         <attr name="linechart_labelBackgroundPaddingVertical" format="dimension|reference" />
-
+        <attr name="linechart_zeroLabelTextColor" format="color|reference" />
+        <attr name="linechart_zeroLabelTextSize" format="dimension|reference" />
+        <attr name="linechart_zeroLabelBackgroundColor" format="color|reference" />
+        <attr name="linechart_scrubLineColor" format="color|reference" />
+        <attr name="linechart_scrubLineWidth" format="dimension|reference" />
+        <!-- What to draw -->
+        <attr name="linechart_gridXDivisions" format="integer" />
+        <attr name="linechart_gridYDivisions" format="integer" />
+        <attr name="linechart_zeroLineEnabled" format="boolean|reference" />
+        <attr name="linechart_scrubEnabled" format="boolean|reference" />
     </declare-styleable>
 </resources>

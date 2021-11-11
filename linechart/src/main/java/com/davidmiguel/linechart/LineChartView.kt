@@ -3,11 +3,9 @@ package com.davidmiguel.linechart
 import android.animation.Animator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
-import android.annotation.TargetApi
 import android.content.Context
 import android.database.DataSetObserver
 import android.graphics.*
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.text.TextPaint
@@ -28,7 +26,31 @@ import com.davidmiguel.linechart.utils.Utils.getNearestIndex
 import java.util.*
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
-class LineChartView : View, ScrubListener, LineChart {
+class LineChartView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = R.attr.linechart_LineChartViewStyle,
+    defStyleRes: Int = R.style.linechart_LineChartView,
+) : View(context, attrs, defStyleAttr, defStyleRes), ScrubListener, LineChart {
+
+    // Data
+    private lateinit var _adapter: LineChartAdapter
+    override var adapter: LineChartAdapter
+        get() = _adapter
+        set(value) {
+            if (::_adapter.isInitialized) _adapter.unregisterDataSetObserver(dataSetObserver)
+            value.registerDataSetObserver(dataSetObserver)
+            _adapter = value
+            populatePaths()
+        }
+    private lateinit var scaleHelper: ScaleHelper
+    override val drawingArea = RectF()
+    private var scaledXPoints = mutableListOf<Float>()
+    private var scaledYPoints = mutableListOf<Float>()
+    override val xPoints: List<Float>
+        get() = ArrayList(scaledXPoints)
+    override val yPoints: List<Float>
+        get() = ArrayList(scaledYPoints)
 
     // Styleable properties
     @ColorInt
@@ -38,14 +60,12 @@ class LineChartView : View, ScrubListener, LineChart {
             linePaint.color = value
             invalidate()
         }
-
     override var lineWidth = 0f
         set(value) {
             field = value
             linePaint.strokeWidth = value
             invalidate()
         }
-
     override var cornerRadius = 0f
         set(value) {
             field = value
@@ -83,23 +103,10 @@ class LineChartView : View, ScrubListener, LineChart {
             gridLinePaint.color = value
             invalidate()
         }
-
     override var gridLineWidth = 0f
         set(value) {
             field = value
             gridLinePaint.strokeWidth = value
-            invalidate()
-        }
-
-    override var gridXDivisions = 0
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    override var gridYDivisions = 0
-        set(value) {
-            field = value
             invalidate()
         }
 
@@ -110,17 +117,10 @@ class LineChartView : View, ScrubListener, LineChart {
             baseLinePaint.color = value
             invalidate()
         }
-
     override var baseLineWidth = 0f
         set(value) {
             field = value
             baseLinePaint.strokeWidth = value
-            invalidate()
-        }
-
-    override var isZeroLineEnabled = true
-        set(value) {
-            field = value
             invalidate()
         }
 
@@ -131,18 +131,74 @@ class LineChartView : View, ScrubListener, LineChart {
             zeroLinePaint.color = value
             invalidate()
         }
-
     override var zeroLineWidth = 0f
         set(value) {
             field = value
             zeroLinePaint.strokeWidth = value
             invalidate()
         }
-
-    override var isScrubEnabled = true
+    override var labelMargin = 0f
         set(value) {
             field = value
-            scrubGestureDetector.enabled = value
+            invalidate()
+        }
+
+    @ColorInt
+    override var labelTextColor = 0
+        set(value) {
+            field = value
+            labelTextPaint.color = value
+            invalidate()
+        }
+    override var labelTextSize = 0f
+        set(value) {
+            field = value
+            labelTextPaint.textSize = value
+            invalidate()
+        }
+
+    @ColorInt
+    override var labelBackgroundColor = 0
+        set(value) {
+            field = value
+            labelBackgroundPaint.color = value
+            invalidate()
+        }
+    override var labelBackgroundRadius = 0f
+        set(value) {
+            field = value
+            invalidate()
+        }
+    override var labelBackgroundPaddingHorizontal = 0f
+        set(value) {
+            field = value
+            invalidate()
+        }
+    override var labelBackgroundPaddingVertical = 0f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    @ColorInt
+    override var zeroLabelTextColor = 0
+        set(value) {
+            field = value
+            zeroLabelTextPaint.color = value
+            invalidate()
+        }
+    override var zeroLabelTextSize = 0f
+        set(value) {
+            field = value
+            zeroLabelTextPaint.textSize = value
+            invalidate()
+        }
+
+    @ColorInt
+    override var zeroLabelBackgroundColor = 0
+        set(value) {
+            field = value
+            zeroLabelBackgroundPaint.color = value
             invalidate()
         }
 
@@ -153,7 +209,6 @@ class LineChartView : View, ScrubListener, LineChart {
             scrubLinePaint.color = scrubLineColor
             invalidate()
         }
-
     override var scrubLineWidth = 0f
         set(value) {
             field = value
@@ -161,66 +216,58 @@ class LineChartView : View, ScrubListener, LineChart {
             invalidate()
         }
 
-    private var labelMargin = 0f
-
-    @ColorInt
-    private var labelTextColor = 0
-    private var labelTextSize = 0f
-
-    @ColorInt
-    private var labelBackgroundColor = 0
-    private var labelBackgroundRadius = 0f
-    private var labelBackgroundPaddingHorizontal = 0f
-    private var labelBackgroundPaddingVertical = 0f
-
     // How to draw
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val gridLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val baseLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val zeroLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val scrubLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val labelTextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
     private var labelTextOriginalAlpha = 0
     private val labelBackgroundPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
     private var labelBackgroundOriginalAlpha = 0
+    private val zeroLabelTextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
+    private var zeroLabelTextOriginalAlpha = 0
+    private val zeroLabelBackgroundPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
+    private var zeroLabelBackgroundOriginalAlpha = 0
     override var yAxisValueFormatter: YAxisValueFormatter = DefaultYAxisValueFormatter()
+    private val scrubLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     // What to draw
     private val linePath = Path()
     private val fillPath = Path()
-    private val gridLinePath = Path()
-    private val baseLinePath = Path()
-    private val zeroLinePath = Path()
-    private val scrubLinePath = Path()
+    override var gridXDivisions = 0
+        set(value) {
+            field = value
+            invalidate()
+        }
+    override var gridYDivisions = 0
+        set(value) {
+            field = value
+            invalidate()
+        }
     private var gridLinesX = mutableListOf<Float>()
     private var gridLinesY = mutableListOf<Float>()
+    private val gridLinePath = Path()
+    private val baseLinePath = Path()
+    override var isZeroLineEnabled = true
+        set(value) {
+            field = value
+            invalidate()
+        }
+    private val zeroLinePath = Path()
     private var labelsY = mutableListOf<Label>()
+    override var isScrubEnabled = true
+        set(value) {
+            field = value
+            scrubGestureDetector.enabled = value
+            invalidate()
+        }
+    private val scrubLinePath = Path()
     private var scrubCursorImg: Bitmap? = null
     private var scrubCursorCurrentPos: PointF? = null
     private var scrubCursorTargetPos: PointF? = null
     private var scrubAnimator = ValueAnimator()
-    private val mainHandler = Handler(Looper.getMainLooper())
-
-    // Data
-    private lateinit var _adapter: LineChartAdapter
-    override var adapter: LineChartAdapter
-        get() = _adapter
-        set(value) {
-            if (::_adapter.isInitialized) _adapter.unregisterDataSetObserver(dataSetObserver)
-            value.registerDataSetObserver(dataSetObserver)
-            _adapter = value
-            populatePaths()
-        }
-
-    private lateinit var scaleHelper: ScaleHelper
-    private var scaledXPoints = mutableListOf<Float>() // Scaled x points
-    private var scaledYPoints = mutableListOf<Float>() // Scaled y points
-    override val drawingArea = RectF()
-    override val xPoints: List<Float>
-        get() = ArrayList(scaledXPoints)
-    override val yPoints: List<Float>
-        get() = ArrayList(scaledYPoints)
 
     // Touch
     private var scrubGestureDetector = ScrubGestureDetector(
@@ -231,8 +278,9 @@ class LineChartView : View, ScrubListener, LineChart {
     override var scrubListener: OnScrubListener? = null
 
     // Animation
-    private var pathAnimator: Animator? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
     override var lineChartAnimator: LineChartAnimator? = null
+    private var pathAnimator: Animator? = null
     override var animationPath: Path?
         get() = linePath
         set(value) {
@@ -244,25 +292,9 @@ class LineChartView : View, ScrubListener, LineChart {
             invalidate()
         }
     var labelAlphaAnimator: ValueAnimator? = null
+    var zeroLabelAlphaAnimator: ValueAnimator? = null
 
-    constructor(context: Context) : super(context) {
-        init(context, null, R.attr.linechart_LineChartViewStyle, R.style.linechart_LineChartView)
-    }
-
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        init(context, attrs, R.attr.linechart_LineChartViewStyle, R.style.linechart_LineChartView)
-    }
-
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        init(context, attrs, defStyleAttr, R.style.linechart_LineChartView)
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) : super(context, attrs, defStyleAttr, defStyleRes) {
-        init(context, attrs, defStyleAttr, defStyleRes)
-    }
-
-    private fun init(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) {
+    init {
         processAttributes(context, attrs, defStyleAttr, defStyleRes)
         configPaintStyles()
         configGestureDetector()
@@ -275,6 +307,7 @@ class LineChartView : View, ScrubListener, LineChart {
     private fun processAttributes(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) {
         val a = context.obtainStyledAttributes(attrs, R.styleable.LineChartView, defStyleAttr, defStyleRes)
         try {
+            // Styleable properties
             lineColor = a.getColor(R.styleable.LineChartView_linechart_lineColor, 0)
             lineWidth = a.getDimension(R.styleable.LineChartView_linechart_lineWidth, 0f)
             cornerRadius = a.getDimension(R.styleable.LineChartView_linechart_cornerRadius, 0f)
@@ -282,16 +315,10 @@ class LineChartView : View, ScrubListener, LineChart {
             fillColor = a.getColor(R.styleable.LineChartView_linechart_fillColor, 0)
             gridLineColor = a.getColor(R.styleable.LineChartView_linechart_gridLineColor, 0)
             gridLineWidth = a.getDimension(R.styleable.LineChartView_linechart_gridLineWidth, 0f)
-            gridXDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridXDivisions, 0)
-            gridYDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridYDivisions, 0)
             baseLineColor = a.getColor(R.styleable.LineChartView_linechart_baseLineColor, 0)
             baseLineWidth = a.getDimension(R.styleable.LineChartView_linechart_baseLineWidth, 0f)
-            isZeroLineEnabled = a.getBoolean(R.styleable.LineChartView_linechart_zeroLineEnabled, true)
             zeroLineColor = a.getColor(R.styleable.LineChartView_linechart_zeroLineColor, 0)
             zeroLineWidth = a.getDimension(R.styleable.LineChartView_linechart_zeroLineWidth, 0f)
-            isScrubEnabled = a.getBoolean(R.styleable.LineChartView_linechart_scrubEnabled, true)
-            scrubLineColor = a.getColor(R.styleable.LineChartView_linechart_scrubLineColor, 0)
-            scrubLineWidth = a.getDimension(R.styleable.LineChartView_linechart_scrubLineWidth, 0f)
             labelMargin = a.getDimension(R.styleable.LineChartView_linechart_labelMargin, 0f)
             labelTextColor = a.getColor(R.styleable.LineChartView_linechart_labelTextColor, 0)
             labelTextSize = a.getDimension(R.styleable.LineChartView_linechart_labelTextSize, 0f)
@@ -299,6 +326,16 @@ class LineChartView : View, ScrubListener, LineChart {
             labelBackgroundRadius = a.getDimension(R.styleable.LineChartView_linechart_labelBackgroundRadius, 0f)
             labelBackgroundPaddingHorizontal = a.getDimension(R.styleable.LineChartView_linechart_labelBackgroundPaddingHorizontal, 0f)
             labelBackgroundPaddingVertical = a.getDimension(R.styleable.LineChartView_linechart_labelBackgroundPaddingVertical, 0f)
+            zeroLabelTextColor = a.getColor(R.styleable.LineChartView_linechart_zeroLabelTextColor, 0)
+            zeroLabelTextSize = a.getDimension(R.styleable.LineChartView_linechart_zeroLabelTextSize, 0f)
+            zeroLabelBackgroundColor = a.getColor(R.styleable.LineChartView_linechart_zeroLabelBackgroundColor, 0)
+            scrubLineColor = a.getColor(R.styleable.LineChartView_linechart_scrubLineColor, 0)
+            scrubLineWidth = a.getDimension(R.styleable.LineChartView_linechart_scrubLineWidth, 0f)
+            // What to draw
+            gridXDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridXDivisions, 0)
+            gridYDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridYDivisions, 0)
+            isZeroLineEnabled = a.getBoolean(R.styleable.LineChartView_linechart_zeroLineEnabled, true)
+            isScrubEnabled = a.getBoolean(R.styleable.LineChartView_linechart_scrubEnabled, true)
         } finally {
             a.recycle()
         }
@@ -331,7 +368,7 @@ class LineChartView : View, ScrubListener, LineChart {
             color = gridLineColor
             strokeWidth = gridLineWidth
         }
-        // Base line
+        // Baseline
         baseLinePaint.apply {
             style = Paint.Style.STROKE
             color = baseLineColor
@@ -343,13 +380,6 @@ class LineChartView : View, ScrubListener, LineChart {
             color = zeroLineColor
             strokeWidth = zeroLineWidth
             pathEffect = DashPathEffect(floatArrayOf(15f, 15f), 0f)
-        }
-        // Scrub line
-        scrubLinePaint.apply {
-            style = Paint.Style.STROKE
-            strokeWidth = scrubLineWidth
-            color = scrubLineColor
-            strokeCap = Paint.Cap.ROUND
         }
         // Labels
         labelTextPaint.apply {
@@ -363,6 +393,25 @@ class LineChartView : View, ScrubListener, LineChart {
             style = Paint.Style.FILL
         }
         labelBackgroundOriginalAlpha = labelBackgroundPaint.alpha
+        // Zero label
+        zeroLabelTextPaint.apply {
+            color = zeroLabelTextColor
+            textSize = zeroLabelTextSize
+            textAlign = Paint.Align.LEFT
+        }
+        zeroLabelTextOriginalAlpha = zeroLabelTextPaint.alpha
+        zeroLabelBackgroundPaint.apply {
+            color = zeroLabelBackgroundColor
+            style = Paint.Style.FILL
+        }
+        zeroLabelBackgroundOriginalAlpha = zeroLabelBackgroundPaint.alpha
+        // Scrub line
+        scrubLinePaint.apply {
+            style = Paint.Style.STROKE
+            strokeWidth = scrubLineWidth
+            color = scrubLineColor
+            strokeCap = Paint.Cap.ROUND
+        }
     }
 
     /**
@@ -424,7 +473,7 @@ class LineChartView : View, ScrubListener, LineChart {
     }
 
     /**
-     * Populates the path to draw.
+     * Populates paths to draw.
      */
     private fun populatePaths() {
         if (width == 0 || height == 0) return
@@ -437,9 +486,9 @@ class LineChartView : View, ScrubListener, LineChart {
         scaleHelper = ScaleHelper(adapter, drawingArea, gridYDivisions)
         scrubCursorImg = getBitmapFromVectorDrawable(context, R.drawable.linechart_scrub_cursor)
         // Populate paths
-        populateGrid()
         populateLine(numPoints)
         populateFilling(numPoints, linePath)
+        populateGrid()
         populateBaseLine()
         populateZeroLine()
         populateLabels()
@@ -448,36 +497,6 @@ class LineChartView : View, ScrubListener, LineChart {
         invalidate()
     }
 
-    /**
-     * Populates grid path.
-     */
-    private fun populateGrid() {
-        gridLinePath.reset()
-        val gridLeft = drawingArea.left
-        val gridBottom = drawingArea.bottom
-        val gridTop = drawingArea.top
-        val gridRight = drawingArea.right
-        // Grid X axis
-        gridLinesX = ArrayList(gridXDivisions)
-        var gridLineSpacing = (gridRight - gridLeft) / gridXDivisions
-        for (i in 0 until gridXDivisions) {
-            gridLinesX.add(gridLeft + i * gridLineSpacing)
-            gridLinePath.moveTo(gridLinesX[i], gridTop)
-            gridLinePath.lineTo(gridLinesX[i], gridBottom)
-        }
-        // Grid Y axis
-        gridLinesY = ArrayList(gridYDivisions)
-        gridLineSpacing = (gridBottom - gridTop) / gridYDivisions
-        for (i in 0 until gridYDivisions) {
-            gridLinesY.add(gridTop + i * gridLineSpacing)
-            gridLinePath.moveTo(gridLeft, gridLinesY[i])
-            gridLinePath.lineTo(gridRight, gridLinesY[i])
-        }
-    }
-
-    /**
-     * Populates line of chart.
-     */
     private fun populateLine(numPoints: Int) {
         linePath.reset()
         scaledXPoints.clear()
@@ -497,9 +516,6 @@ class LineChartView : View, ScrubListener, LineChart {
         }
     }
 
-    /**
-     * Populates the filling of the line if enabled (linePath should be already populated).
-     */
     private fun populateFilling(numPoints: Int, linePath: Path) {
         fillPath.reset()
         getFillEdge()?.let { fillEdge ->
@@ -544,9 +560,30 @@ class LineChartView : View, ScrubListener, LineChart {
         }
     }
 
-    /**
-     * Populates the base line path if enabled.
-     */
+    private fun populateGrid() {
+        gridLinePath.reset()
+        val gridLeft = drawingArea.left
+        val gridBottom = drawingArea.bottom
+        val gridTop = drawingArea.top
+        val gridRight = drawingArea.right
+        // Grid X axis
+        gridLinesX = ArrayList(gridXDivisions)
+        var gridLineSpacing = (gridRight - gridLeft) / gridXDivisions
+        for (i in 0 until gridXDivisions) {
+            gridLinesX.add(gridLeft + i * gridLineSpacing)
+            gridLinePath.moveTo(gridLinesX[i], gridTop)
+            gridLinePath.lineTo(gridLinesX[i], gridBottom)
+        }
+        // Grid Y axis
+        gridLinesY = ArrayList(gridYDivisions)
+        gridLineSpacing = (gridBottom - gridTop) / gridYDivisions
+        for (i in 0 until gridYDivisions) {
+            gridLinesY.add(gridTop + i * gridLineSpacing)
+            gridLinePath.moveTo(gridLeft, gridLinesY[i])
+            gridLinePath.lineTo(gridRight, gridLinesY[i])
+        }
+    }
+
     private fun populateBaseLine() {
         baseLinePath.reset()
         if (adapter.hasBaseLine) {
@@ -560,30 +597,29 @@ class LineChartView : View, ScrubListener, LineChart {
 
     private fun populateZeroLine() {
         zeroLinePath.reset()
-        if (isZeroLineEnabled && adapter.getDataBounds().top < 0) {
+        if (shouldDrawZeroLine()) {
             val zeroStart = drawingArea.left
             val zeroEnd = drawingArea.right
             val zeroY = scaleHelper.getY(0f)
-            zeroLinePath.moveTo(zeroStart, zeroY)
-            zeroLinePath.lineTo(zeroEnd, zeroY)
+            zeroLinePath.moveTo(zeroEnd, zeroY)
+            zeroLinePath.lineTo(zeroStart, zeroY)
         }
     }
 
-    /**
-     * Populates labels.
-     */
+    private fun shouldDrawZeroLine() = isZeroLineEnabled && adapter.getDataBounds().top < 0
+
     private fun populateLabels() {
-        // Populate labels
         labelsY = ArrayList(gridLinesY.size - 1)
         var labelText: String
         val labelTextBounds = Rect()
         var labelTextX: Float
         var labelTextY: Float
         var background: RectF
-        val bgLeft = drawingArea.left + labelMargin
+        var bgLeft = drawingArea.left + labelMargin
         var bgTop: Float
         var bgRight: Float
         var bgBottom: Float
+        // Populate grid labels
         for (i in 1 until gridLinesY.size) { // No label in the last grid line
             // Format text
             labelText = yAxisValueFormatter.getFormattedValue(scaleHelper.getRawY(gridLinesY[i]), adapter.getDataBounds(), gridYDivisions)
@@ -596,7 +632,20 @@ class LineChartView : View, ScrubListener, LineChart {
             // Calculate text position
             labelTextX = bgLeft + labelBackgroundPaddingHorizontal - labelTextBounds.left
             labelTextY = bgBottom - labelBackgroundPaddingVertical - labelTextBounds.bottom
-            labelsY.add(Label(background, labelTextX, labelTextY, labelText))
+            labelsY.add(Label(background, labelTextX, labelTextY, labelText, labelBackgroundPaint, labelTextPaint))
+        }
+        // Add zero label
+        if (shouldDrawZeroLine()) {
+            labelText = yAxisValueFormatter.getFormattedValue(0f, adapter.getDataBounds(), gridYDivisions)
+            zeroLabelTextPaint.getTextBounds(labelText, 0, labelText.length, labelTextBounds)
+            bgTop = scaleHelper.getY(0f) - labelTextBounds.height() / 2f - labelBackgroundPaddingVertical
+            bgRight = drawingArea.right - labelMargin
+            bgBottom = bgTop + labelTextBounds.height() + labelBackgroundPaddingVertical * 2
+            bgLeft = bgRight - labelTextBounds.width() - labelBackgroundPaddingHorizontal * 2
+            background = RectF(bgLeft, bgTop, bgRight, bgBottom)
+            labelTextX = bgLeft + labelBackgroundPaddingHorizontal - labelTextBounds.left
+            labelTextY = bgBottom - labelBackgroundPaddingVertical - labelTextBounds.bottom
+            labelsY.add(Label(background, labelTextX, labelTextY, labelText, zeroLabelBackgroundPaint, zeroLabelTextPaint))
         }
     }
 
@@ -607,9 +656,6 @@ class LineChartView : View, ScrubListener, LineChart {
         scrubCursorCurrentPos = scrubCursorTargetPos
     }
 
-    /**
-     * Populates scrub cursor.
-     */
     private fun populateScrubCursor(newScrubCursorTargetPos: PointF) {
         when {
             scrubCursorCurrentPos == null -> {
@@ -633,9 +679,6 @@ class LineChartView : View, ScrubListener, LineChart {
         invalidate()
     }
 
-    /**
-     * Clears data to draw.
-     */
     private fun clearData() {
         fillPath.reset()
         linePath.reset()
@@ -653,16 +696,13 @@ class LineChartView : View, ScrubListener, LineChart {
         if (fillType != LineChartFillType.NONE) {
             canvas.drawPath(fillPath, fillPaint)
         }
-        canvas.drawPath(baseLinePath, baseLinePaint)
         canvas.drawPath(zeroLinePath, zeroLinePaint)
+        canvas.drawPath(baseLinePath, baseLinePaint)
         canvas.drawPath(linePath, linePaint)
         drawScrubCursor(canvas)
         drawLabels(canvas)
     }
 
-    /**
-     * Draws scrub cursor.
-     */
     private fun drawScrubCursor(canvas: Canvas) {
         scrubCursorCurrentPos?.let { currentPos ->
             scrubCursorImg?.let { cursorImg ->
@@ -676,12 +716,9 @@ class LineChartView : View, ScrubListener, LineChart {
         }
     }
 
-    /**
-     * Draws chart labels in the canvas.
-     */
     private fun drawLabels(canvas: Canvas) {
         if (labelsY.isEmpty()) return
-        for ((background, textX, textY, text) in labelsY) {
+        for ((background, textX, textY, text, labelBackgroundPaint, labelTextPaint) in labelsY) {
             canvas.drawRoundRect(background, labelBackgroundRadius, labelBackgroundRadius, labelBackgroundPaint)
             canvas.drawText(text, textX, textY, labelTextPaint)
         }
@@ -728,24 +765,43 @@ class LineChartView : View, ScrubListener, LineChart {
         animateAlphaLabels(0.3f, 1f)
     }
 
-    /**
-     * Animates the alpha of the labels.
-     */
     private fun animateAlphaLabels(start: Float, end: Float) {
+        labelAlphaAnimator = animateAlpha(
+            labelAlphaAnimator,
+            labelTextPaint, labelTextOriginalAlpha,
+            labelBackgroundPaint, labelBackgroundOriginalAlpha,
+            start, end,
+        )
+        zeroLabelAlphaAnimator = animateAlpha(
+            zeroLabelAlphaAnimator,
+            zeroLabelTextPaint, zeroLabelTextOriginalAlpha,
+            zeroLabelBackgroundPaint, zeroLabelBackgroundOriginalAlpha,
+            start, end,
+        )
+    }
+
+    private fun animateAlpha(
+        animator: ValueAnimator?,
+        labelTextPaint: Paint,
+        labelTextOriginalAlpha: Int,
+        labelBackgroundPaint: Paint,
+        labelBackgroundOriginalAlpha: Int,
+        start: Float,
+        end: Float
+    ): ValueAnimator {
         // If animation was running, take the actual value and cancel animation
         var startVal = start
-        labelAlphaAnimator?.let { animator ->
-            startVal = animator.animatedValue as Float
-            animator.cancel()
+        animator?.let {
+            startVal = it.animatedValue as Float
+            it.cancel()
         }
-        labelAlphaAnimator = ValueAnimator.ofFloat(startVal, end).apply {
+        return ValueAnimator.ofFloat(startVal, end).apply {
             addUpdateListener { animation: ValueAnimator ->
                 val index = animation.animatedValue as Float
                 labelTextPaint.alpha = (labelTextOriginalAlpha * index).toInt()
                 labelBackgroundPaint.alpha = (labelBackgroundOriginalAlpha * index).toInt()
                 invalidate()
             }
-            labelAlphaAnimator = this
             start()
         }
     }
