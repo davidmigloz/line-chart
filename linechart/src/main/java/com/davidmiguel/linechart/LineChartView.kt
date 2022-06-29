@@ -5,7 +5,16 @@ import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
 import android.content.Context
 import android.database.DataSetObserver
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.CornerPathEffect
+import android.graphics.DashPathEffect
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.PointF
+import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
 import android.text.TextPaint
@@ -13,6 +22,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.ViewConfiguration
 import androidx.annotation.ColorInt
+import androidx.core.graphics.drawable.toBitmap
 import com.davidmiguel.linechart.animation.LineChartAnimator
 import com.davidmiguel.linechart.formatter.DefaultYAxisValueFormatter
 import com.davidmiguel.linechart.formatter.YAxisValueFormatter
@@ -23,7 +33,6 @@ import com.davidmiguel.linechart.touch.ScrubGestureDetector.ScrubListener
 import com.davidmiguel.linechart.utils.ScaleHelper
 import com.davidmiguel.linechart.utils.Utils.getBitmapFromVectorDrawable
 import com.davidmiguel.linechart.utils.Utils.getNearestIndex
-import java.util.*
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 class LineChartView @JvmOverloads constructor(
@@ -274,6 +283,9 @@ class LineChartView @JvmOverloads constructor(
             scrubGestureDetector.enabled = value
             invalidate()
         }
+
+    override var scrubCursorDrawable: Drawable? = null
+
     private val scrubLinePath = Path()
     private var scrubCursorImg: Bitmap? = null
     private var scrubCursorCurrentPos: PointF? = null
@@ -342,6 +354,8 @@ class LineChartView @JvmOverloads constructor(
             zeroLabelBackgroundColor = a.getColor(R.styleable.LineChartView_linechart_zeroLabelBackgroundColor, 0)
             scrubLineColor = a.getColor(R.styleable.LineChartView_linechart_scrubLineColor, 0)
             scrubLineWidth = a.getDimension(R.styleable.LineChartView_linechart_scrubLineWidth, 0f)
+            scrubCursorDrawable = a.getDrawable(R.styleable.LineChartView_linechart_scrubCursorDrawable)
+
             // What to draw
             gridXDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridXDivisions, 0)
             gridYDivisions = a.getInteger(R.styleable.LineChartView_linechart_gridYDivisions, 0)
@@ -495,7 +509,12 @@ class LineChartView @JvmOverloads constructor(
             return
         }
         scaleHelper = ScaleHelper(adapter, drawingArea, gridYDivisions)
-        scrubCursorImg = getBitmapFromVectorDrawable(context, R.drawable.linechart_scrub_cursor)
+        scrubCursorImg = if (scrubCursorDrawable != null) {
+            scrubCursorDrawable?.toBitmap()
+        } else {
+            getBitmapFromVectorDrawable(context, R.drawable.linechart_scrub_cursor)
+        }
+
         // Populate paths
         populateLine(numPoints)
         populateFilling(numPoints, linePath)

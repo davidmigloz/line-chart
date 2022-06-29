@@ -33,6 +33,7 @@
         <attr name="linechart_zeroLabelBackgroundColor" format="color|reference" />
         <attr name="linechart_scrubLineColor" format="color|reference" />
         <attr name="linechart_scrubLineWidth" format="dimension|reference" />
+        <attr name="linechart_scrubCursorDrawable" format="reference" />
         <!-- What to draw -->
         <attr name="linechart_gridXDivisions" format="integer" />
         <attr name="linechart_gridYDivisions" format="integer" />

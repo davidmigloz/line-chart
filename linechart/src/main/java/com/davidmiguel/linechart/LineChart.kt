@@ -2,6 +2,7 @@ package com.davidmiguel.linechart
 
 import android.graphics.Path
 import android.graphics.RectF
+import android.graphics.drawable.Drawable
 import androidx.annotation.ColorInt
 import com.davidmiguel.linechart.animation.LineChartAnimator
 import com.davidmiguel.linechart.formatter.YAxisValueFormatter
@@ -159,6 +160,11 @@ interface LineChart {
      * Set the width in pixels of the scrub line's stroke.
      */
     var scrubLineWidth: Float
+
+    /**
+     * Set scrub cursor drawable.
+     */
+    var scrubCursorDrawable: Drawable?
 
     // How to draw
 
