@@ -1,5 +1,10 @@
 # Changelog line-chart
 
+## `2.2.0` (29/06/22)
+
+- Add scrubCursorDrawable attribute and Change core to core-ktx (#5)) | Thanks @delacrixmorgan
+- Update dependencies
+
 ## `2.1.0` (11/11/21)
 
 - Fix baseline
