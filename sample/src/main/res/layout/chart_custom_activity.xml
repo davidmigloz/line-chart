@@ -32,7 +32,8 @@
         lib:linechart_labelTextColor="@color/rose"
         lib:linechart_labelTextSize="14sp"
         lib:linechart_lineColor="@color/white"
-        lib:linechart_lineWidth="4dp" />
+        lib:linechart_lineWidth="4dp"
+        lib:linechart_scrubCursorDrawable="@drawable/linechart_scrub_cursor_black" />
 
     <View
         android:layout_width="0dp"
